@@ -1,10 +1,42 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-psycopg2-binary
-passlib[bcrypt]
-python-jose[cryptography]
-python-dotenv
-pydantic[email]
-pydantic-settings
-python-multipart
+# Core
+fastapi>=0.68.0,<0.69.0
+uvicorn[standard]>=0.15.0,<0.16.0
+python-multipart>=0.0.5,<0.6.0
+
+# Database
+sqlalchemy>=1.4.0,<2.0.0
+alembic>=1.7.0,<2.0.0
+psycopg2-binary>=2.9.0,<3.0.0
+
+# Authentication & Security
+passlib[bcrypt]>=1.7.4,<2.0.0
+python-jose[cryptography]>=3.3.0,<4.0.0
+python-multipart>=0.0.5,<0.6.0
+
+# Environment & Configuration
+python-dotenv>=0.19.0,<0.20.0
+pydantic[email]>=1.8.0,<2.0.0
+pydantic-settings>=2.0.0,<3.0.0
+
+# Email
+emails>=0.6.0,<0.7.0
+jinja2>=3.0.0,<4.0.0
+
+# Testing
+pytest>=6.2.5,<7.0.0
+pytest-cov>=2.12.0,<3.0.0
+httpx>=0.19.0,<0.20.0
+
+# Development
+black>=21.9b0,<22.0.0
+isort>=5.9.3,<6.0.0
+flake8>=3.9.2,<4.0.0
+mypy>=0.910,<0.920
+
+# Documentation
+mkdocs>=1.2.3,<2.0.0
+mkdocs-material>=7.3.6,<8.0.0
+
+# Utilities
+python-dateutil>=2.8.2,<3.0.0
+python-slugify>=5.0.2,<6.0.0

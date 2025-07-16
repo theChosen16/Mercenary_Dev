@@ -1,0 +1,167 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mercenary-backend"
+version = "0.1.0"
+description = "Backend API for the Mercenary platform"
+readme = "README.md"
+requires-python = ">=3.9,<3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Mercenary Team", email = "dev@mercenary.example.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Framework :: FastAPI",
+]
+dependencies = [
+    "fastapi>=0.68.0,<0.69.0",
+    "uvicorn[standard]>=0.15.0,<0.16.0",
+    "sqlalchemy>=1.4.0,<2.0.0",
+    "psycopg2-binary>=2.9.0,<3.0.0",
+    "alembic>=1.7.0,<2.0.0",
+    "passlib[bcrypt]>=1.7.4,<2.0.0",
+    "python-jose[cryptography]>=3.3.0,<4.0.0",
+    "python-multipart>=0.0.5,<0.6.0",
+    "python-dotenv>=0.19.0,<0.20.0",
+    "pydantic[email]>=1.8.0,<2.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    "emails>=0.6.0,<0.7.0",
+    "jinja2>=3.0.0,<4.0.0",
+    "python-dateutil>=2.8.2,<3.0.0",
+    "python-slugify>=5.0.2,<6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.2.5,<7.0.0",
+    "pytest-cov>=2.12.0,<3.0.0",
+    "httpx>=0.19.0,<0.20.0",
+    "black>=21.9b0,<22.0.0",
+    "isort>=5.9.3,<6.0.0",
+    "flake8>=3.9.2,<4.0.0",
+    "mypy>=0.910,<0.920",
+    "pre-commit>=2.15.0,<3.0.0",
+]
+docs = [
+    "mkdocs>=1.2.3,<2.0.0",
+    "mkdocs-material>=7.3.6,<8.0.0",
+    "mkdocstrings[python]>=0.18.0,<0.19.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.flake8]
+max-line-length = 88
+max-complexity = 18
+select = ["E", "F", "W", "C90"]
+ignore = [
+    "E203",  # whitespace before ':' (conflicts with black)
+    "E501",  # line too long (handled by black)
+    "W503",  # line break before binary operator (handled by black)
+]
+per-file-ignores = [
+    "__init__.py: F401",  # unused imports in __init__ files
+]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["sqlalchemy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["alembic.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=app --cov-report=term-missing --cov-report=xml"
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "app/tests/*",
+    "app/**/__init__.py",
+    "app/main.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = ["E", "F", "W", "C90"]
+ignore = [
+    "E203",  # whitespace before ':' (conflicts with black)
+    "E501",  # line too long (handled by black)
+    "W503",  # line break before binary operator (handled by black)
+]
+
+[metadata]
+license = "MIT"
+license_files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/mercenary"
+Documentation = "https://mercenary.readthedocs.io"
+Changelog = "https://github.com/yourusername/mercenary/releases"
+Source = "https://github.com/yourusername/mercenary"
+Tracker = "https://github.com/yourusername/mercenary/issues"

@@ -1,0 +1,145 @@
+# Auto-detect text files and normalize line endings
+* text=auto eol=lf
+
+# Declare files that will always have CRLF line endings on checkout
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.sh text eol=lf
+
+# Declare files that will always have LF line endings on checkout
+*.py text eol=lf
+*.pyi text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.conf text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.js text eol=lf
+Dockerfile* text eol=lf
+docker-compose* text eol=lf
+Makefile text eol=lf
+
+# Binary files that should not be modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.eot binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.dmg binary
+*.pkg binary
+*.app binary
+*.dll binary
+*.exe binary
+*.pyc binary
+*.pyo binary
+*.pyd binary
+*.so binary
+*.dylib binary
+*.a binary
+*.o binary
+*.obj binary
+*.lib binary
+*.class binary
+*.war binary
+*.jar binary
+*.ear binary
+*.sar binary
+*.rar binary
+*.7z binary
+*.bz2 binary
+*.iso binary
+*.img binary
+*.msi binary
+*.msp binary
+*.msm binary
+*.m4p binary
+*.m4v binary
+*.mp4 binary
+*.mp3 binary
+*.mov binary
+*.avi binary
+*.wmv binary
+*.flv binary
+*.wma binary
+*.wav binary
+*.m4a binary
+*.aac binary
+*.ogg binary
+*.flac binary
+*.alac binary
+*.aiff binary
+*.swf binary
+*.swc binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.ppt binary
+*.pptx binary
+*.odt binary
+*.ods binary
+*.odp binary
+*.odg binary
+*.odc binary
+*.odf binary
+*.odb binary
+*.odm binary
+*.ott binary
+*.ots binary
+*.otp binary
+*.otg binary
+*.otc binary
+*.otf binary
+*.odft binary
+*.odx binary
+*.odm binary
+*.otx binary
+*.ots binary
+*.otp binary
+*.otg binary
+*.otc binary
+*.odf binary
+*.odg binary
+*.odp binary
+*.ods binary
+*.odt binary
+*.oxt binary
+*.epub binary
+*.ibooks binary
+*.xpi binary
+*.crx binary
+*.xul binary
+*.xhtml binary
+*.xht binary
+*.xlf binary
+*.xliff binary
+*.xaml binary
+*.xib binary
+*.nib binary
+
+# OS generated files
+.DS_Store binary
+.DS_Store? binary
+._* binary
+.Spotlight-V100 binary
+.Trashes binary
+ehthumbs.db binary
+Thumbs.db binary
