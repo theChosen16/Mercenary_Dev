@@ -4,11 +4,11 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-from config import settings
+from app.core.config import settings
 
 
 # Configuración de la conexión a la base de datos
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+SQLALCHEMY_DATABASE_URL = str(settings.SQLALCHEMY_DATABASE_URI)
 
 # Crear el motor de SQLAlchemy
 engine = create_engine(

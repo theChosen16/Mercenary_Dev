@@ -1,13 +1,16 @@
-# **Propuesta de Desarrollo y Arquitectura Estratégica: Plataforma de "Mercenarios" en el Mercado Chileno**
+# **Visión Estratégica: Plataforma de "Mercenarios"**
 
-## **Análisis Estratégico y Posicionamiento de Mercado**
+## **1. Propuesta de Valor Única (PVU)**
 
-Esta sección establece el contexto competitivo y define la oportunidad de mercado. Se analizarán las plataformas existentes en Chile para identificar un nicho donde la aplicación propuesta, con su propuesta de valor única, pueda prosperar.
+### **1.1 Diferenciación Clave**
 
-### **Definición de la Propuesta de Valor Única (PVU): Gamificación y Comunidad de Élite**
+La plataforma Mercenary se posiciona como una **comunidad gamificada de élite para profesionales de alto rendimiento**, diferenciándose de las plataformas tradicionales de freelancing con un enfoque en:
 
-La propuesta de valor de esta aplicación no debe ser competir como "otro Upwork" o "un Fiverr para Chile". Su diferenciación fundamental y su ventaja competitiva residen en la creación de una **comunidad gamificada y de nicho para profesionales de alto rendimiento**. La terminología elegida —"Mercenario" y "ranked competitivo"— es el pilar de esta identidad.  
-Mientras las plataformas existentes se centran en la transacción como fin último, esta aplicación se enfocará en la **reputación, el estatus y la competencia** como motores de engagement. Este enfoque está diseñado para atraer a un perfil de usuario que valora el reconocimiento objetivo de su habilidad y la superación de desafíos tanto como la compensación económica. El sistema de ranking no es simplemente una característica adicional; es el producto central. Los oferentes no pagan solo por publicar un anuncio, pagan por acceder a un grupo de talento que ha sido rigurosamente curado y clasificado por un algoritmo confiable. De manera similar, los mercenarios no solo trabajan por dinero, sino también para mejorar su posición en el ranking, lo que a su vez les otorga acceso a trabajos de mayor prestigio y remuneración. Esta dinámica crea un círculo virtuoso de participación y calidad que las plataformas generalistas no pueden replicar fácilmente.
+- **Sistema de Ranking Competitivo**: El núcleo de la propuesta de valor, que mide y premia la excelencia.
+- **Enfoque en Calidad sobre Cantidad**: Atracción de profesionales de alto nivel y proyectos desafiantes.
+- **Gamificación del Trabajo**: Los usuarios mejoran su estatus a través de logros y desempeño comprobado.
+
+> **Nota**: Para detalles técnicos sobre la implementación del sistema de ranking, consulte [Diseño del Sistema de Ranking](./8_documentation/API_DOCS.md#sistema-de-ranking).
 
 ### **Análisis del Perfil de Usuario Objetivo**
 
@@ -16,18 +19,26 @@ El éxito de la plataforma depende de atraer y retener a dos perfiles de usuario
 * **El "Mercenario":** Se define como una persona natural. No es un freelancer ocasional, sino un especialista que busca proyectos que pongan a prueba sus capacidades. Se siente motivado por un sistema que mide objetivamente su habilidad y fiabilidad a través de la competencia directa y un ranking visible. El ascenso en este ranking es un objetivo en sí mismo, representando un testimonio de su pericia.  
 * **El "Oferente":** Puede ser una persona o una empresa que necesita talento de alta calidad y fiabilidad para ejecutar tareas críticas. Este usuario está dispuesto a confiar y, potencialmente, a pagar una prima por un sistema de ranking robusto que filtre eficazmente a los mejores candidatos, eliminando la incertidumbre y la fricción inherentes al proceso de selección tradicional.1
 
-## **Arquitectura de la Solución y Hoja de Ruta para el MVP**
+## **2. Visión General de la Arquitectura**
 
-Esta sección traduce la visión estratégica en un plan técnico tangible, definiendo la arquitectura general y priorizando las funcionalidades para un lanzamiento rápido y efectivo de un Producto Mínimo Viable (MVP).
+Para detalles completos sobre la arquitectura técnica, consulte el documento [Decisiones Técnicas](../2_arquitectura/01_decisiones_tecnicas.md).
 
-### **Visión General de la Arquitectura Tecnológica (Tech Stack)**
+### **2.1 Pilares Tecnológicos**
 
-Se propone una arquitectura de software moderna, desacoplada y diseñada para la escalabilidad. Esta arquitectura se puede implementar inicialmente como un monolito bien estructurado que permita una evolución futura hacia microservicios sin una reingeniería masiva.
+- **Frontend**: Aplicación móvil multiplataforma desarrollada con Flutter
+- **Backend**: API RESTful construida con FastAPI (Python)
+- **Base de Datos**: PostgreSQL para garantizar integridad transaccional
+- **Infraestructura**: Contenedores Docker para despliegue consistente
 
-* **Frontend (Móvil):** Se desarrollará una única aplicación multiplataforma para alcanzar a usuarios de Android e iOS desde el lanzamiento del MVP, optimizando los recursos de desarrollo.  
-* **Backend (API):** Una API central, preferiblemente RESTful, actuará como el cerebro de la aplicación. Gestionará toda la lógica de negocio, la autenticación de usuarios, la comunicación con la base de datos y la ejecución de los algoritmos del sistema de ranking.  
-* **Base de Datos:** Se utilizará una base de datos relacional para garantizar la máxima integridad de los datos transaccionales, de perfiles y de calificaciones, que son el activo más crítico de la plataforma.  
-* **Infraestructura:** La aplicación se desplegará utilizando contenedores **Docker**, una herramienta con la que ya existe familiaridad. Esto asegura un entorno de despliegue consistente, reproducible y fácilmente escalable en proveedores de nube como Amazon Web Services (AWS), Google Cloud Platform (GCP) o DigitalOcean.
+## **3. Modelo de Negocio**
+
+Para una descripción detallada del modelo de negocio, consulte [Modelo de Negocio](../5_negocio/01_modelo_negocio.md).
+
+### **3.1 Fuentes de Ingresos**
+
+1. Comisión por servicio (15% sobre transacciones)
+2. Membresías Premium para Mercenarios y Empresas
+3. Servicios adicionales (destacados de perfiles, publicidad)
 
 ### **Definición y Priorización de Funcionalidades para el MVP**
 

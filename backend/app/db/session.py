@@ -11,7 +11,8 @@ from app.core.config import settings
 
 
 # Configuración de la conexión a la base de datos
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+# Convertir la URL de la base de datos a string para SQLAlchemy
+SQLALCHEMY_DATABASE_URL = str(settings.SQLALCHEMY_DATABASE_URI)
 
 # Crear el motor de SQLAlchemy
 engine = create_engine(

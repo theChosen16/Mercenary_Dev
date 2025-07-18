@@ -3,12 +3,18 @@ Modelo de Reseña (Review).
 
 Define la estructura de las calificaciones y reseñas que los usuarios se dejan.
 """
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy import Column, ForeignKey, Integer, Text, CheckConstraint
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, relationship, Session
 
 from app.models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.job import Job
+    from app.models.user import User
 
 
 class Review(Base):
@@ -31,10 +37,10 @@ class Review(Base):
     comment: Mapped[Optional[str]] = Column(Text, nullable=True)
     
     # Relaciones
-    job_id: Mapped[int] = Column(
-        Integer, 
-        ForeignKey("jobs.id", ondelete="CASCADE"), 
-        nullable=False, 
+    job_id: Mapped[UUID] = Column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("jobs.id", ondelete="CASCADE"),
+        nullable=False,
         unique=True
     )
     reviewer_id: Mapped[int] = Column(
@@ -48,20 +54,13 @@ class Review(Base):
         nullable=False
     )
     
-    # Configuración de relaciones
-    job: Mapped["Job"] = relationship(
-        "Job", 
-        back_populates="review"
-    )
+    # Configuración de relaciones con otros modelos
+    job: Mapped["Job"] = relationship("Job", back_populates="reviews")
     reviewer: Mapped["User"] = relationship(
-        "User", 
-        back_populates="reviews_given", 
-        foreign_keys=[reviewer_id]
+        "User", foreign_keys=[reviewer_id], back_populates="reviews_given"
     )
     reviewee: Mapped["User"] = relationship(
-        "User", 
-        back_populates="reviews_received", 
-        foreign_keys=[reviewee_id]
+        "User", foreign_keys=[reviewee_id], back_populates="reviews_received"
     )
 
     def __repr__(self) -> str:

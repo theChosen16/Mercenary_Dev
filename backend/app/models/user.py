@@ -21,7 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, relationship, Session
 
 from app.models.base import Base
-from app.core.security import get_password_hash, verify_password
+from app.core.password_utils import get_password_hash, verify_password
 
 
 class UserRole(str, Enum):

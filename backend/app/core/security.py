@@ -2,17 +2,25 @@
 Utilidades de seguridad como autenticación y generación de tokens JWT.
 """
 from datetime import datetime, timedelta
-from typing import Any, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
-from jose import jwt
-from passlib.context import CryptContext
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.user import User
+from app.core.password_utils import verify_password, get_password_hash
+from app.db.session import get_db
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+try:
+    from app.models.user import User  # Avoid circular import
+except ImportError:
+    User = TypeVar('User')  # Type stub for when User is not available
+
+# Esquema OAuth2 para manejar tokens de autenticación
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
 def create_access_token(
@@ -73,36 +81,64 @@ def create_refresh_token(
     return encoded_jwt
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verificar una contraseña contra un hash.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
+# Password functions moved to password_utils.py to avoid circular imports
 
 
-def get_password_hash(password: str) -> str:
-    """
-    Obtener el hash de una contraseña.
-    """
-    return pwd_context.hash(password)
-
-
-def get_user_by_email(db: Session, email: EmailStr) -> Optional[User]:
+def get_user_by_email(db: Session, email: EmailStr) -> Optional[Any]:
     """
     Obtener un usuario por su correo electrónico.
     """
+    from app.models.user import User  # Import here to avoid circular imports
     return db.query(User).filter(User.email == email).first()
 
 
 def authenticate_user(
     db: Session, email: EmailStr, password: str
-) -> Optional[User]:
+) -> Optional[Any]:
     """
     Autenticar un usuario con correo electrónico y contraseña.
     """
-    user = get_user_by_email(db, email=email)
+    user = get_user_by_email(db, email)
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
         return None
+    return user
+
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
+) -> User:
+    """
+    Obtener el usuario actual a partir del token JWT.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="No se pudieron validar las credenciales",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        # Decodificar el token JWT
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        
+        # Obtener el ID de usuario del token
+        user_id = payload.get("user_id")
+        if user_id is None:
+            raise credentials_exception
+            
+    except JWTError:
+        raise credentials_exception
+    
+    # Obtener el usuario de la base de datos
+    from app.models.user import User
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise credentials_exception
+        
     return user
