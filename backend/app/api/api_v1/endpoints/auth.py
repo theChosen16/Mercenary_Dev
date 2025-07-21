@@ -52,7 +52,7 @@ def register_user(
     try:
         # Verificar si el usuario ya existe por correo
         logger.debug("Buscando usuario por email: %s", user_in.email)
-        db_user = user_crud.user.get_by_email(db, email=user_in.email)
+        db_user = user_crud.get_by_email(db, email=user_in.email)
         if db_user:
             msg = f"Intento de registro con correo existente: {user_in.email}"
             logger.warning(msg)
@@ -63,7 +63,7 @@ def register_user(
 
         # Verificar si el nombre de usuario ya existe
         logger.debug("Verificando nombre de usuario: %s", user_in.username)
-        db_user = user_crud.user.get_by_username(
+        db_user = user_crud.get_by_username(
             db, username=user_in.username
         )
         if db_user:
@@ -81,7 +81,7 @@ def register_user(
         
         try:
             logger.info("Creando usuario en la base de datos...")
-            user = user_crud.user.create(db, obj_in=user_data)
+            user = user_crud.create(db, obj_in=user_data)
             logger.info("Usuario creado exitosamente con ID: %s", user.id)
             return user
         except Exception as e:

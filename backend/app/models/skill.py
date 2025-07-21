@@ -30,7 +30,7 @@ class UserSkill(Base):
 
     __tablename__ = "user_skill"
 
-    user_id = Column(Integer, ForeignKey("user.id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     skill_id = Column(Integer, ForeignKey("skill.id"), primary_key=True)
     proficiency = Column(Integer, default=1)  # 1-5 scale
 

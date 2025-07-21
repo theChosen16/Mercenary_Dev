@@ -25,10 +25,13 @@ from app.core.password_utils import get_password_hash, verify_password
 
 
 class UserRole(str, Enum):
-    """Enumeración de roles de usuario."""
-    ADMIN = "admin"
-    MERCENARY = "mercenary"
-    OFFERER = "offerer"
+    """Enumeración de roles de usuario.
+    
+    Nota: Los valores deben coincidir exactamente con los definidos en la base de datos (UPPERCASE).
+    """
+    ADMIN = "ADMIN"
+    MERCENARY = "MERCENARY"
+    OFFERER = "OFFERER"
 
 
 class User(Base):
@@ -87,6 +90,20 @@ class User(Base):
         "Review", 
         back_populates="reviewee", 
         foreign_keys="Review.reviewee_id"
+    )
+    
+    # Proyectos donde el usuario es el cliente
+    client_projects: Mapped[list["Project"]] = relationship(
+        "Project", 
+        back_populates="client", 
+        foreign_keys="Project.client_id"
+    )
+    
+    # Proyectos donde el usuario es el freelancer asignado
+    freelancer_projects: Mapped[list["Project"]] = relationship(
+        "Project", 
+        back_populates="freelancer", 
+        foreign_keys="Project.freelancer_id"
     )
 
     def __repr__(self) -> str:

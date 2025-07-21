@@ -78,7 +78,7 @@ class Job(Base):
         back_populates="jobs_posted",
         foreign_keys=[offerer_id]
     )
-    assigned_mercenary = relationship(
+    mercenary = relationship(
         "User",
         back_populates="jobs_assigned",
         foreign_keys=[assigned_mercenary_id]

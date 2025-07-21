@@ -35,8 +35,14 @@ Basado en el análisis de la documentación, aquí está la guía cronológica d
   - [x] Registro de usuarios
   - [x] Inicio de sesión con JWT
   - [x] Endpoints protegidos
+  - [x] Manejo de roles de usuario (ADMIN, MERCENARY, OFFERER)
 - [x] Resolución de conflictos de dependencias
 - [x] Configuración de CORS y variables de entorno
+- [x] Corrección del esquema de base de datos para usuarios
+  - [x] Actualización del enum UserRole a valores UPPERCASE
+  - [x] Adición de columnas faltantes al modelo User
+  - [x] Migraciones de base de datos con Alembic
+  - [x] Verificación de la integridad del esquema
 
 ### Próximos Pasos Inmediatos
 
@@ -53,7 +59,9 @@ Basado en el análisis de la documentación, aquí está la guía cronológica d
 - [x] Implementación de inicio de sesión
 - [x] Gestión de tokens JWT
 - [x] Middleware de autenticación
-- [ ] Pruebas automatizadas de autenticación
+- [x] Pruebas de integración de autenticación
+- [ ] Pruebas unitarias de autenticación
+- [x] Manejo de errores y validación de datos
 
 #### API Core
 
@@ -66,10 +74,14 @@ Basado en el análisis de la documentación, aquí está la guía cronológica d
 
 - [x] Configuración de PostgreSQL
 - [x] Definición de modelos principales
-- [x] Configuración de migraciones
+- [x] Configuración de migraciones con Alembic
+- [x] Aplicación de migraciones iniciales
+- [x] Corrección de esquema de usuarios
+  - [x] Actualización del enum UserRole
+  - [x] Adición de columnas faltantes
+  - [x] Verificación de restricciones
 - [ ] Población inicial de datos de prueba
-- [ ] Migraciones
-- [ ] Datos iniciales
+- [ ] Scripts de migración para producción
 
 #### Despliegue
 

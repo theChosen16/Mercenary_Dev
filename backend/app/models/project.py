@@ -36,10 +36,10 @@ class Project(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # Relaciones
-    client_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     client = relationship("User", back_populates="client_projects", foreign_keys=[client_id])
     
-    freelancer_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    freelancer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     freelancer = relationship("User", back_populates="freelancer_projects", foreign_keys=[freelancer_id])
     
     skills = relationship("Skill", secondary=project_skill, back_populates="projects")

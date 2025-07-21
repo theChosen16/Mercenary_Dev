@@ -33,11 +33,14 @@ def get_url() -> str:
     Returns:
         str: Database connection string
     """
-    from app.core.config import settings
-    
-    # Convert PostgresDsn to string if needed
-    db_uri = settings.SQLALCHEMY_DATABASE_URI
-    return str(db_uri) if db_uri else ""
+    try:
+        from app.core.config import settings
+        # Convert PostgresDsn to string if needed
+        db_uri = settings.SQLALCHEMY_DATABASE_URI
+        return str(db_uri) if db_uri else "postgresql://postgres:mercenary123@localhost:5432/mercenary_db"
+    except Exception as e:
+        print(f"[WARNING] Could not load settings, using default database URL: {e}")
+        return "postgresql://postgres:mercenary123@localhost:5432/mercenary_db"
 
 
 def run_migrations_offline() -> None:
@@ -68,25 +71,36 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine and associate
     a connection with the context.
     """
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = get_url()
+    # Get the database URL
+    db_url = get_url()
+    print(f"[INFO] Using database URL: {db_url}")
     
+    # Create engine with explicit encoding
     connectable = engine_from_config(
-        configuration,
+        {"sqlalchemy.url": db_url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"connect_timeout": 10},
     )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=True,
-            compare_server_default=True,
-        )
+    try:
+        with connectable.connect() as connection:
+            print("[INFO] Database connection successful!")
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                compare_type=True,
+                compare_server_default=True,
+                render_as_batch=True,
+            )
 
-        with context.begin_transaction():
-            context.run_migrations()
+            with context.begin_transaction():
+                print("[INFO] Running migrations...")
+                context.run_migrations()
+                print("[SUCCESS] Migrations completed successfully!")
+    except Exception as e:
+        print(f"[ERROR] Failed to run migrations: {e}")
+        raise
 
 
 # Run the appropriate migration function based on the context

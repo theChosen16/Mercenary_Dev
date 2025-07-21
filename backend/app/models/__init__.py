@@ -16,6 +16,24 @@ from .user import User, UserRole
 from .profile import Profile
 from .job import Job, JobStatus
 from .review import Review
+from .project import Project
+from .proposal import Proposal
+from .skill import Skill, UserSkill
+
+# Ensure all models are imported and registered with Base's metadata
+__all__ = [
+    'Base',
+    'User',
+    'UserRole',
+    'Profile',
+    'Job',
+    'JobStatus',
+    'Review',
+    'Project',
+    'Proposal',
+    'Skill',
+    'UserSkill',
+]
 
 # Re-exportar tipos comunes para facilitar su uso
 __all__ = [
