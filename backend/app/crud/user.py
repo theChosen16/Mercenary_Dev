@@ -26,6 +26,11 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         """Create a new user with hashed password."""
+        from app.models.user import UserRole  # Import here to avoid circular imports
+        
+        # Set default role if not provided
+        role = getattr(obj_in, 'role', UserRole.MERCENARY)
+        
         db_obj = User(
             email=obj_in.email,
             username=obj_in.username,
@@ -34,6 +39,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             bio=obj_in.bio,
             profile_picture=obj_in.profile_picture,
             is_active=True,
+            role=role
         )
         db.add(db_obj)
         db.commit()

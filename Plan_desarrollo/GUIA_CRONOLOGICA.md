@@ -43,11 +43,27 @@ Basado en el análisis de la documentación, aquí está la guía cronológica d
   - [x] Adición de columnas faltantes al modelo User
   - [x] Migraciones de base de datos con Alembic
   - [x] Verificación de la integridad del esquema
+- [x] Implementación de la gestión de perfiles de usuario
+  - [x] Modelo de perfil de usuario
+  - [x] Endpoints para CRUD de perfiles
+  - [x] Validación de datos
+- [x] Implementación del sistema de trabajos (Jobs)
+  - [x] Modelo de Job con estados (abierto, en progreso, completado, cancelado)
+  - [x] CRUD completo para trabajos
+  - [x] Asignación de mercenarios a trabajos
+  - [x] Filtrado y paginación de trabajos
+  - [x] Permisos basados en roles
+- [x] Documentación de la API actualizada
+  - [x] Esquemas de datos
+  - [x] Endpoints documentados
+  - [x] Ejemplos de solicitudes/respuestas
 
 ### Próximos Pasos Inmediatos
 
-1. Completar pruebas de autenticación
-2. Implementar gestión de perfiles de usuario
+1. Implementar el sistema de contratos y depósito en garantía (Escrow)
+2. Desarrollar el sistema de revisión y calificaciones
+3. Implementar notificaciones en tiempo real
+4. Crear paneles de control para cada tipo de usuario
 3. Desarrollar sistema de roles y permisos
 
 ### Backend

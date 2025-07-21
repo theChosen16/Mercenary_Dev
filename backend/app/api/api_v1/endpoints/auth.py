@@ -1,12 +1,12 @@
 """Endpoints para autenticación de usuarios."""
 import logging
-import traceback
 from datetime import datetime, timedelta
 from typing import Any
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session  # noqa: F401
 
@@ -46,66 +46,39 @@ def register_user(
     Raises:
         HTTPException: Si el correo ya está registrado o hay un error
     """
-    logger.info("Iniciando registro de usuario")
-    logger.debug("Datos de entrada del usuario: %s", user_in.dict())
+    logger.info("Attempting to register user: %s", user_in.email)
 
+    # The database schema should have unique constraints on email and username.
+    # We can leverage this to simplify the code and avoid race conditions
+    # by catching the IntegrityError from the database.
     try:
-        # Verificar si el usuario ya existe por correo
-        logger.debug("Buscando usuario por email: %s", user_in.email)
-        db_user = user_crud.get_by_email(db, email=user_in.email)
-        if db_user:
-            msg = f"Intento de registro con correo existente: {user_in.email}"
-            logger.warning(msg)
+        user = user_crud.create(db, obj_in=user_in)
+        logger.info("User '%s' registered successfully with ID: %s", user.email, user.id)
+        return user
+    except IntegrityError as e:
+        db.rollback()
+        error_info = str(e.orig).lower()
+        # The exact constraint name might differ based on your DB/Alembic version.
+        # Check your database schema for the correct constraint names.
+        if "users_email_key" in error_info or "ix_users_email" in error_info:
+            logger.warning("Registration failed for email %s: email already exists.", user_in.email)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El correo electrónico ya está registrado",
+                detail="Email already registered",
+            )
+        if "users_username_key" in error_info or "ix_users_username" in error_info:
+            logger.warning("Registration failed for username %s: username already exists.", user_in.username)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken",
             )
 
-        # Verificar si el nombre de usuario ya existe
-        logger.debug("Verificando nombre de usuario: %s", user_in.username)
-        db_user = user_crud.get_by_username(
-            db, username=user_in.username
-        )
-        if db_user:
-            msg = f"Intento de registro con usuario existente: {user_in.username}"
-            logger.warning(msg)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El nombre de usuario ya está en uso",
-            )
-        
-        # Crear el usuario con rol por defecto 'offerer'
-        user_data = user_in.dict()
-        user_data["role"] = "offerer"  # Establecer rol por defecto
-        logger.debug("Datos del usuario a crear: %s", user_data)
-        
-        try:
-            logger.info("Creando usuario en la base de datos...")
-            user = user_crud.create(db, obj_in=user_data)
-            logger.info("Usuario creado exitosamente con ID: %s", user.id)
-            return user
-        except Exception as e:
-            logger.error("Error al crear el usuario: %s", str(e))
-            logger.error("Tipo de excepción: %s", type(e).__name__)
-            logger.error("Traceback completo: %s", traceback.format_exc())
-            
-            # Intentar obtener más detalles del error de SQLAlchemy
-            if hasattr(e, 'orig') and hasattr(e.orig, 'pgerror'):
-                logger.error("Error de PostgreSQL: %s", e.orig.pgerror)
-            
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error al crear el usuario. Intente nuevamente."
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.critical("Error inesperado durante el registro: %s", str(e))
-        logger.error(traceback.format_exc())
+        # If it's a different integrity error, raise a generic 500 error.
+        logger.error("An unexpected database integrity error occurred during user registration.", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error inesperado al procesar la solicitud de registro"
-        ) from e
+            detail="An error occurred during registration.",
+        )
 
 
 @router.post("/login/access-token", response_model=Token)
@@ -114,14 +87,14 @@ async def login_access_token(
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     """Obtener un token de acceso OAuth2 para autenticación.
-    
+
     Args:
         db: Sesión de base de datos
         form_data: Datos del formulario de inicio de sesión
-        
+
     Returns:
         dict: Tokens de acceso y actualización
-        
+
     Raises:
         HTTPException: Si la autenticación falla
     """
@@ -129,14 +102,14 @@ async def login_access_token(
     user = security.authenticate_user(
         db, email=form_data.username, password=form_data.password
     )
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -146,7 +119,7 @@ async def login_access_token(
     # Crear tokens de acceso y actualización
     access_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    
+
     access_token = security.create_access_token(
         user.email, user.id, user.role, expires_delta=access_expires
     )
@@ -167,10 +140,10 @@ def test_token(
     current_user: User = Depends(security.get_current_user)
 ) -> Any:
     """Probar el token de acceso actual.
-    
+
     Args:
         current_user: Usuario autenticado
-        
+
     Returns:
         User: Datos del usuario autenticado
     """
@@ -183,14 +156,14 @@ def refresh_token(
     db: Session = Depends(get_db)
 ) -> Any:
     """Obtener un nuevo token de acceso utilizando un token de actualización.
-    
+
     Args:
         token_in: Token de actualización
         db: Sesión de base de datos
-        
+
     Returns:
         dict: Nuevos tokens de acceso y actualización
-        
+
     Raises:
         HTTPException: Si el token es inválido o el usuario no existe
     """
@@ -217,7 +190,7 @@ def refresh_token(
     # Crear nuevos tokens
     access_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    
+
     access_token = security.create_access_token(
         user.email, user.id, user.role, expires_delta=access_expires
     )

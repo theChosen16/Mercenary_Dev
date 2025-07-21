@@ -74,7 +74,7 @@ class UserUpdate(BaseModel):
 class UserInDBBase(UserBase):
     """Esquema base para usuarios en la base de datos."""
     id: int = Field(..., description="ID único del usuario")
-    user_type: UserRole = Field(..., description="Rol del usuario en el sistema")
+    role: UserRole = Field(..., description="Rol del usuario en el sistema")
     is_active: bool = Field(..., description="Indica si el usuario está activo")
     created_at: datetime = Field(..., description="Fecha de creación del usuario")
     updated_at: datetime = Field(..., description="Fecha de última actualización del usuario")

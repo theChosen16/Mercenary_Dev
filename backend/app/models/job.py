@@ -73,15 +73,21 @@ class Job(Base):
     )
 
     # Configuración de relaciones
-    offerer = relationship(
+    offerer: Mapped["User"] = relationship(
         "User",
-        back_populates="jobs_posted",
-        foreign_keys=[offerer_id]
+        foreign_keys=[offerer_id],
+        back_populates="jobs_posted"
     )
-    mercenary = relationship(
+    assigned_mercenary: Mapped[Optional["User"]] = relationship(
         "User",
-        back_populates="jobs_assigned",
-        foreign_keys=[assigned_mercenary_id]
+        foreign_keys=[assigned_mercenary_id],
+        back_populates="jobs_assigned"
+    )
+    contract: Mapped[Optional["Contract"]] = relationship(
+        "Contract",
+        back_populates="job",
+        uselist=False,
+        cascade="all, delete-orphan"
     )
     review = relationship(
         "Review",

@@ -1,4 +1,4 @@
-# Documentación de la API
+# Documentación de la API v1
 
 ## Autenticación
 
@@ -10,45 +10,98 @@ Authorization: Bearer <token>
 
 ## Endpoints
 
+Todas las rutas de la API están prefijadas con `/api/v1/`.
+
 ### Autenticación
 
-#### `POST /api/auth/register`
+#### `POST /api/v1/auth/register`
 Registra un nuevo usuario.
 
 **Body:**
 ```json
 {
   "email": "usuario@ejemplo.com",
-  "password": "contraseña123",
-  "user_type": "mercenary"
+  "username": "usuario123",
+  "password": "contraseñaSegura123",
+  "full_name": "Juan Pérez",
+  "bio": "Desarrollador Full Stack con 5 años de experiencia",
+  "profile_picture": "https://ejemplo.com/foto.jpg"
 }
 ```
 
 **Respuesta exitosa (201):**
 ```json
 {
-  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "id": 1,
   "email": "usuario@ejemplo.com",
-  "user_type": "mercenary",
-  "created_at": "2025-07-15T20:30:00Z"
+  "username": "usuario123",
+  "full_name": "Juan Pérez",
+  "bio": "Desarrollador Full Stack con 5 años de experiencia",
+  "profile_picture": "https://ejemplo.com/foto.jpg",
+  "role": "MERCENARY",
+  "is_active": true,
+  "created_at": "2025-07-21T18:30:00Z",
+  "updated_at": "2025-07-21T18:30:00Z"
+}
+```
+
+### Autenticación (continuación)
+
+#### `POST /api/v1/auth/login`
+Inicia sesión y obtiene tokens de acceso.
+
+**Body (form-data):**
+- `username`: Nombre de usuario o correo electrónico
+- `password`: Contraseña
+
+**Respuesta exitosa (200):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### `POST /api/v1/auth/refresh-token`
+Obtiene un nuevo token de acceso usando un token de actualización.
+
+**Body:**
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
 }
 ```
 
 ### Usuarios
 
-#### `GET /api/users/me`
+#### `GET /api/v1/users/me`
 Obtiene la información del usuario autenticado.
+
+**Headers:**
+- `Authorization: Bearer <access_token>`
 
 **Respuesta exitosa (200):**
 ```json
 {
-  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "id": 1,
   "email": "usuario@ejemplo.com",
-  "first_name": "Juan",
-  "last_name": "Pérez",
-  "user_type": "mercenary",
-  "rating": 4.8,
-  "created_at": "2025-07-15T20:30:00Z"
+  "username": "usuario123",
+  "full_name": "Juan Pérez",
+  "bio": "Desarrollador Full Stack con 5 años de experiencia",
+  "profile_picture": "https://ejemplo.com/foto.jpg",
+  "role": "MERCENARY",
+  "is_active": true,
+  "created_at": "2025-07-21T18:30:00Z",
+  "updated_at": "2025-07-21T18:30:00Z"
 }
 ```
 

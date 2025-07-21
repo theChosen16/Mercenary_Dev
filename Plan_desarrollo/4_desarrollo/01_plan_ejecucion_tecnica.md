@@ -99,67 +99,91 @@ El diseño visual definirá la experiencia del usuario. Se utilizará una herram
 
 ✅ **Estructura del Proyecto**
 
-- [x] Archivos principales en la raíz de `backend/`: `main.py`, `auth.py`, `schemas.py`, `crud.py`, `models.py`.
-- [x] Modelos avanzados en `app/models/`: `user.py`, `job.py`, `profile.py`, `review.py`.
-- [x] Configuración centralizada con `config.py`.
-- [x] Base de datos configurada con SQLAlchemy.
+- [x] Arquitectura modular en `app/` siguiendo las mejores prácticas de FastAPI
+- [x] Modelos en `app/models/`: `user.py`, `job.py`, `profile.py`
+- [x] Esquemas Pydantic en `app/schemas/`
+- [x] Lógica de negocio en `app/crud/`
+- [x] Rutas de la API en `app/api/` con versionado
+- [x] Configuración centralizada con `config.py`
+- [x] Base de datos configurada con SQLAlchemy y Alembic
 
 ✅ **Autenticación JWT**
 
-- [x] `POST /token`: Genera un token JWT al iniciar sesión.
-- [x] Middleware de autenticación con OAuth2PasswordBearer.
-- [x] Hasheo de contraseñas con `bcrypt` (passlib).
-- [x] Validación de tokens JWT con python-jose.
-- [x] Función `get_current_user` y `get_current_active_user`.
+- [x] `POST /api/v1/auth/token`: Genera tokens JWT (acceso y refresh)
+- [x] `POST /api/v1/auth/refresh`: Renueva el token de acceso
+- [x] Middleware de autenticación con OAuth2PasswordBearer
+- [x] Hasheo seguro de contraseñas con `bcrypt`
+- [x] Validación de tokens JWT con python-jose
+- [x] Manejo de roles de usuario (ADMIN, MERCENARY, OFFERER)
+- [x] Funciones de utilidad para verificación de permisos
 
-✅ **Endpoints Implementados**
+✅ **Endpoints de Usuarios**
 
-- [x] `GET /`: Endpoint de salud del API.
-- [x] `POST /users/`: Crear nuevo usuario (con flag is_offerer).
-- [x] `GET /users/me/`: Obtener perfil del usuario autenticado.
-- [x] `POST /token`: Autenticación y generación de token.
+- [x] `POST /api/v1/users/`: Registro de nuevos usuarios
+- [x] `GET /api/v1/users/me/`: Obtener perfil del usuario autenticado
+- [x] `PUT /api/v1/users/me/`: Actualizar perfil del usuario
+- [x] `GET /api/v1/users/{user_id}/`: Ver perfil público de usuario
+
+✅ **Endpoints de Perfiles**
+
+- [x] `GET /api/v1/profiles/me`: Obtener perfil completo del usuario
+- [x] `PUT /api/v1/profiles/me`: Actualizar perfil del usuario
+- [x] `GET /api/v1/profiles/{profile_id}`: Ver perfil público
+
+✅ **Endpoints de Trabajos (Jobs)**
+
+- [x] `POST /api/v1/jobs/`: Crear nueva oferta de trabajo
+- [x] `GET /api/v1/jobs/`: Listar trabajos con filtros
+- [x] `GET /api/v1/jobs/{job_id}/`: Ver detalle de trabajo
+- [x] `PUT /api/v1/jobs/{job_id}/`: Actualizar trabajo (solo oferente)
+- [x] `DELETE /api/v1/jobs/{job_id}/`: Eliminar trabajo (solo oferente o admin)
+- [x] `POST /api/v1/jobs/{job_id}/assign/`: Asignar mercenario a trabajo
 
 ### **Próximas Tareas**
 
-🔲 **Migración a Modelos Avanzados**
-
-- [ ] Integrar modelos de `app/models/` con el sistema actual.
-- [ ] Actualizar schemas para soportar roles (UserRole enum).
-- [ ] Migrar de `is_offerer` boolean a sistema de roles.
-
-🔲 **Endpoints de Perfil**
-
-- [ ] `POST /profiles/`: Crear perfil de usuario.
-- [ ] `PUT /profiles/me/`: Actualizar perfil del usuario.
-- [ ] `GET /profiles/{user_id}/`: Ver perfil público.
-
-🔲 **Endpoints de Trabajos (Jobs)**
-
-- [ ] `POST /jobs/`: Crear nueva oferta de trabajo.
-- [ ] `GET /jobs/`: Listar trabajos disponibles.
-- [ ] `GET /jobs/{job_id}/`: Ver detalle de trabajo.
-- [ ] `PUT /jobs/{job_id}/`: Actualizar trabajo (solo oferente).
-- [ ] `DELETE /jobs/{job_id}/`: Eliminar trabajo.
-
 🔲 **Sistema de Aplicaciones**
 
-- [ ] Crear modelo `Application`.
-- [ ] `POST /jobs/{job_id}/apply/`: Aplicar a un trabajo.
-- [ ] `GET /applications/`: Ver mis aplicaciones.
-- [ ] `PUT /applications/{id}/status/`: Cambiar estado de aplicación.
+- [ ] Crear modelo `Application` con estados (PENDING, ACCEPTED, REJECTED, COMPLETED)
+- [ ] `POST /api/v1/jobs/{job_id}/apply/`: Aplicar a un trabajo
+- [ ] `GET /api/v1/applications/`: Ver mis aplicaciones (tanto como oferente como mercenario)
+- [ ] `PUT /api/v1/applications/{application_id}/status/`: Cambiar estado de aplicación
+- [ ] `GET /api/v1/jobs/{job_id}/applications/`: Ver aplicaciones a un trabajo (solo oferente)
 
 🔲 **Sistema de Reseñas**
 
-- [ ] `POST /reviews/`: Crear reseña después de trabajo completado.
-- [ ] `GET /users/{user_id}/reviews/`: Ver reseñas de un usuario.
+- [ ] Crear modelo `Review` con calificación y comentario
+- [ ] `POST /api/v1/reviews/`: Crear reseña después de trabajo completado
+- [ ] `GET /api/v1/users/{user_id}/reviews/`: Ver reseñas de un usuario
+- [ ] Cálculo automático de calificación promedio por usuario
+- [ ] Validación para asegurar que solo se pueda dejar reseña por trabajos completados
+
+🔲 **Sistema de Pagos y Contratos**
+
+- [ ] Integración con pasarela de pagos (ej: Stripe, Transbank)
+- [ ] Creación de contratos digitales
+- [ ] Sistema de depósito en garantía (escrow)
+- [ ] Proceso de liberación de fondos al completar el trabajo
+- [ ] Historial de transacciones
+
+🔲 **Notificaciones en Tiempo Real**
+
+- [ ] Integración con WebSockets o similar
+- [ ] Notificaciones para:
+  - Nuevas ofertas de trabajo
+  - Aplicaciones a trabajos publicados
+  - Cambios de estado en aplicaciones
+  - Mensajes entre usuarios
+  - Actualizaciones de pagos
 
 🔲 **Seguridad y Mejoras**
 
-- [ ] Rate limiting con slowapi.
-- [ ] Manejo de errores personalizado.
-- [ ] Logging con loguru.
-- [ ] Validación de permisos por rol.
-- [ ] CORS configurado correctamente.
+- [ ] Rate limiting con slowapi
+- [ ] Manejo de errores personalizado
+- [ ] Logging con loguru
+- [ ] Documentación automática con Swagger/ReDoc
+- [ ] Tests unitarios y de integración
+- [ ] Monitoreo de rendimiento
+- [ ] Auditoría de seguridad
 
 ---
 

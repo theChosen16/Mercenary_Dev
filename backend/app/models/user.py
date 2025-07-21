@@ -75,7 +75,7 @@ class User(Base):
     jobs_assigned: Mapped[list["Job"]] = relationship(
         "Job", 
         back_populates="mercenary", 
-        foreign_keys="Job.mercenary_id"
+        foreign_keys="Job.assigned_mercenary_id"
     )
     
     # Reseñas hechas por el usuario
@@ -96,47 +96,31 @@ class User(Base):
     client_projects: Mapped[list["Project"]] = relationship(
         "Project", 
         back_populates="client", 
-        foreign_keys="Project.client_id"
+        foreign_keys="[Project.client_id]"
     )
     
-    # Proyectos donde el usuario es el freelancer asignado
+    # Proyectos donde el usuario es el freelancer
     freelancer_projects: Mapped[list["Project"]] = relationship(
-        "Project", 
-        back_populates="freelancer", 
-        foreign_keys="Project.freelancer_id"
+        "Project",
+        back_populates="freelancer",
+        foreign_keys="[Project.freelancer_id]"
+    )
+    
+    # Contratos donde el usuario es el oferente
+    contracts_as_offerer: Mapped[list["Contract"]] = relationship(
+        "Contract",
+        foreign_keys="[Contract.offerer_id]",
+        back_populates="offerer",
+        cascade="all, delete-orphan"
+    )
+    
+    # Contratos donde el usuario es el mercenario
+    contracts_as_mercenary: Mapped[list["Contract"]] = relationship(
+        "Contract",
+        foreign_keys="[Contract.mercenary_id]",
+        back_populates="mercenary",
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"
-
-    @classmethod
-    def create(
-        cls, 
-        db: Session, 
-        email: str, 
-        password: str, 
-        role: UserRole = UserRole.MERCENARY
-    ) -> "User":
-        """Crea un nuevo usuario en la base de datos.
-
-        Args:
-            db: Sesión de base de datos.
-            email: Correo electrónico del usuario.
-            password: Contraseña del usuario.
-            hashed_password: Contraseña hasheada.
-            role: Rol del usuario.
-            is_active: Indica si el usuario está activo.
-
-        Returns:
-            User: El usuario creado.
-        """
-        user = cls(
-            email=email,
-            hashed_password=hashed_password,
-            role=role,
-            is_active=is_active,
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        return user

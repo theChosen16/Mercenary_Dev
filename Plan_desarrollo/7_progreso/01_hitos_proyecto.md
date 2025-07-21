@@ -15,21 +15,39 @@
 
 ### Backend
 
-- [ ] Configuración del entorno de desarrollo
-- [ ] Implementación de la autenticación
+- [x] Configuración del entorno de desarrollo
+  - [x] Configuración de Python y dependencias
+  - [x] Configuración de PostgreSQL
+  - [x] Configuración de Docker
+  - [x] Estructura del proyecto
+- [x] Implementación de la autenticación
   - [x] Definición de esquemas de autenticación
-  - [ ] Implementación de registro/login
-  - [ ] Gestión de tokens JWT
-  - [ ] Middleware de autenticación
+  - [x] Implementación de registro/login
+  - [x] Gestión de tokens JWT (acceso y refresh)
+  - [x] Middleware de autenticación
+  - [x] Manejo de roles de usuario (ADMIN, MERCENARY, OFFERER)
 - [ ] Desarrollo de la API core
-  - [ ] Modelos de datos
-  - [ ] Endpoints de usuarios
-  - [ ] Endpoints de trabajos
-  - [ ] Sistema de mensajería
-- [ ] Integración con base de datos
-  - [ ] Configuración de PostgreSQL
-  - [ ] Migraciones
-  - [ ] Seeds iniciales
+  - [x] Modelos de datos
+    - [x] Modelo de Usuario con roles
+    - [x] Modelo de Perfil de Usuario
+    - [x] Modelo de Trabajos (Jobs)
+  - [x] Endpoints de usuarios
+    - [x] CRUD básico de usuarios
+    - [x] Gestión de perfiles
+  - [x] Endpoints de trabajos
+    - [x] Publicación de trabajos
+    - [x] Búsqueda y filtrado
+    - [x] Asignación de mercenarios
+    - [x] Actualización de estados
+  - [ ] Sistema de mensajería (pendiente)
+- [x] Integración con base de datos
+  - [x] Configuración de PostgreSQL
+  - [x] Migraciones con Alembic
+    - [x] Migración inicial
+    - [x] Actualización de esquema de usuarios
+    - [x] Migración para perfiles de usuario
+    - [x] Migración para trabajos
+  - [ ] Seeds iniciales (pendiente)
 - [ ] Sistema de ranking y calificaciones
   - [ ] Algoritmo de calificación
   - [ ] Endpoints de calificación

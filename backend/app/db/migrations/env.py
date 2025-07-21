@@ -8,10 +8,17 @@ from sqlalchemy import engine_from_config, pool
 # Import models for autogenerate support
 # pylint: disable=unused-import
 from app.db.base_class import Base
+# Import all models to ensure they are registered with SQLAlchemy
+from app.models import *  # noqa: F401,F403
+
+# Explicitly import all models to ensure they are loaded
+from app.models.user import User  # noqa: F401
+from app.models.job import Job  # noqa: F401
 from app.models.project import Project  # noqa: F401
 from app.models.proposal import Proposal  # noqa: F401
+from app.models.review import Review  # noqa: F401
 from app.models.skill import Skill, UserSkill  # noqa: F401
-from app.models.user import User  # noqa: F401
+from app.models.profile import Profile  # noqa: F401
 
 # This is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
