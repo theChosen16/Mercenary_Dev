@@ -36,11 +36,11 @@ class Project(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # Relaciones
-    client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    client = relationship("User", back_populates="client_projects", foreign_keys=[client_id])
+    offerer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    offerer = relationship("User", back_populates="projects_as_offerer", foreign_keys=[offerer_id])
     
-    freelancer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    freelancer = relationship("User", back_populates="freelancer_projects", foreign_keys=[freelancer_id])
+    mercenary_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    mercenary = relationship("User", back_populates="projects_as_mercenary", foreign_keys=[mercenary_id])
     
     skills = relationship("Skill", secondary=project_skill, back_populates="projects")
     proposals = relationship("Proposal", back_populates="project", cascade="all, delete-orphan")

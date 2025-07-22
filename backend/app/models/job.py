@@ -4,6 +4,7 @@ Define la estructura de las ofertas de trabajo publicadas en la plataforma.
 """
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from sqlalchemy import (
     Column,

@@ -107,7 +107,7 @@ Obtiene la información del usuario autenticado.
 
 ### Trabajos (Jobs)
 
-#### `GET /api/jobs`
+#### `GET /api/v1/jobs`
 Lista los trabajos disponibles con opciones de filtrado.
 
 **Parámetros de consulta:**
@@ -151,11 +151,11 @@ Lista los trabajos disponibles con opciones de filtrado.
 
 ```bash
 # Obtener perfil del usuario
-curl -X GET "https://api.mercenary.dev/api/users/me" \
+curl -X GET "https://api.mercenary.dev/api/v1/users/me" \
   -H "Authorization: Bearer <token>"
 
 # Crear un nuevo trabajo
-curl -X POST "https://api.mercenary.dev/api/jobs" \
+curl -X POST "https://api.mercenary.dev/api/v1/jobs" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"title": "Diseño de logo", "description": "Necesito un logo para mi empresa", "price": 300}'

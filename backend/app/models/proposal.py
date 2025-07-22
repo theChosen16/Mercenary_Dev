@@ -34,8 +34,8 @@ class Proposal(Base):
     project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     project = relationship("Project", back_populates="proposals")
     
-    freelancer_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    freelancer = relationship("User", back_populates="proposals")
+    mercenary_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    mercenary = relationship("User", back_populates="proposals")
     
     def __repr__(self):
         return f"<Proposal {self.id} for Project {self.project_id}>"

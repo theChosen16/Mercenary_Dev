@@ -81,9 +81,20 @@ Basado en el análisis de la documentación, aquí está la guía cronológica d
 
 #### API Core
 
-- [ ] Modelos de datos
-- [ ] Endpoints de usuarios
-- [ ] Endpoints de trabajos
+- [x] Modelos de datos
+  - [x] Modelo de Usuario con roles
+  - [x] Modelo de Perfil
+  - [x] Modelo de Trabajo (Job)
+  - [x] Modelo de Contrato
+  - [x] Modelo de Revisión
+- [x] Endpoints de usuarios
+  - [x] CRUD de usuarios
+  - [x] Gestión de perfiles
+  - [x] Autenticación y autorización
+- [x] Endpoints de trabajos
+  - [x] Publicación de trabajos
+  - [x] Asignación de mercenarios
+  - [x] Filtrado y búsqueda
 - [ ] Sistema de mensajería
 
 #### Base de Datos
@@ -164,16 +175,19 @@ Basado en el análisis de la documentación, aquí está la guía cronológica d
 - Documentación técnica completa
 - Diseños de UI/UX finalizados
 - Estructura del proyecto definida
-
-### En Progreso
 - Configuración del entorno de desarrollo
 - Implementación del sistema de autenticación
+- Modelos de datos principales
+- Endpoints de usuarios y trabajos
+- Sistema de perfiles de usuario
+- Documentación de la API
 
 ### Próximos Pasos
-1. Completar la configuración del entorno de desarrollo
-2. Implementar el sistema de autenticación
-3. Configurar la base de datos inicial
-4. Desarrollar la API core
+1. Implementar el sistema de contratos y depósito en garantía (Escrow)
+2. Desarrollar el sistema de revisión y calificaciones
+3. Implementar notificaciones en tiempo real
+4. Crear paneles de control para cada tipo de usuario
+5. Desarrollar sistema de mensajería
 
 ### Bloqueadores/Riesgos
 - Ninguno identificado hasta el momento

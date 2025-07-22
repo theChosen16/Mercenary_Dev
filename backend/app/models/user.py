@@ -92,18 +92,18 @@ class User(Base):
         foreign_keys="Review.reviewee_id"
     )
     
-    # Proyectos donde el usuario es el cliente
-    client_projects: Mapped[list["Project"]] = relationship(
+    # Proyectos donde el usuario es el oferente
+    projects_as_offerer: Mapped[list["Project"]] = relationship(
         "Project", 
-        back_populates="client", 
-        foreign_keys="[Project.client_id]"
+        back_populates="offerer", 
+        foreign_keys="[Project.offerer_id]"
     )
     
-    # Proyectos donde el usuario es el freelancer
-    freelancer_projects: Mapped[list["Project"]] = relationship(
+    # Proyectos donde el usuario es el mercenario
+    projects_as_mercenary: Mapped[list["Project"]] = relationship(
         "Project",
-        back_populates="freelancer",
-        foreign_keys="[Project.freelancer_id]"
+        back_populates="mercenary",
+        foreign_keys="[Project.mercenary_id]"
     )
     
     # Contratos donde el usuario es el oferente
