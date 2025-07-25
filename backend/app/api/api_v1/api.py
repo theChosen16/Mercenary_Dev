@@ -3,11 +3,13 @@ Enrutador principal de la API v1.
 """
 from fastapi import APIRouter
 
-from app.api.api_v1.endpoints import auth, users, jobs
+from app.api.api_v1.endpoints import auth, users, announcements, categories, contracts
 
-api_router = APIRouter(prefix="/api/v1")
+api_router = APIRouter()
 
 # Incluir routers específicos
-api_router.include_router(auth.router, prefix="/auth", tags=["autenticación"])
-api_router.include_router(users.router, prefix="/users", tags=["usuarios"])
-api_router.include_router(jobs.router, prefix="/jobs", tags=["trabajos"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(users.router, prefix="/users", tags=["Users"])
+api_router.include_router(announcements.router, prefix="/announcements", tags=["Announcements"])
+api_router.include_router(categories.router, prefix="/categories", tags=["Categories"])
+api_router.include_router(contracts.router, prefix="/contracts", tags=["Contracts"])

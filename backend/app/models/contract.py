@@ -10,6 +10,7 @@ from enum import Enum
 from typing import List, Optional
 
 from sqlalchemy import (
+    UUID,
     Column,
     DateTime,
     Enum as SQLEnum,
@@ -46,7 +47,7 @@ class Contract(Base):
         status: Estado actual del contrato.
         offerer_id: ID del usuario oferente.
         mercenary_id: ID del usuario mercenario.
-        job_id: ID del trabajo relacionado (opcional).
+        announcement_id: ID del anuncio relacionado.
         created_at: Fecha de creación del contrato.
         updated_at: Fecha de última actualización.
         completed_at: Fecha de finalización del contrato.
@@ -78,12 +79,7 @@ class Contract(Base):
         nullable=False,
         index=True
     )
-    job_id: Mapped[Optional[int]] = Column(
-        Integer,
-        ForeignKey("jobs.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True
-    )
+    announcement_id: Mapped[UUID] = Column(UUID(as_uuid=True), ForeignKey("announcements.id", ondelete="CASCADE"), nullable=False, index=True)
     
     # Fechas
     created_at: Mapped[datetime] = Column(
@@ -110,7 +106,7 @@ class Contract(Base):
         foreign_keys=[mercenary_id],
         back_populates="contracts_as_mercenary"
     )
-    job: Mapped[Optional["Job"]] = relationship("Job", back_populates="contract")
+    announcement: Mapped["Announcement"] = relationship("Announcement", back_populates="contracts")
     transactions: Mapped[List["Transaction"]] = relationship(
         "Transaction",
         back_populates="contract",
@@ -157,12 +153,7 @@ class Transaction(Base):
         nullable=False,
         index=True
     )
-    contract_id: Mapped[int] = Column(
-        Integer,
-        ForeignKey("contracts.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
+    contract_id: Mapped[UUID] = Column(UUID(as_uuid=True), ForeignKey("contracts.id", ondelete="CASCADE"), nullable=False, index=True)
     processed_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
     notes: Mapped[Optional[str]] = Column(Text, nullable=True)
     

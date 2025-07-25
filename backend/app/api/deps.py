@@ -63,8 +63,8 @@ def get_current_active_user(
     return current_user
 
 
-def get_current_active_superuser(
-    current_user: User = Depends(get_current_user),
+def get_current_superuser(
+    current_user: User = Depends(get_current_active_user),
 ) -> User:
     """
     Verificar que el usuario actual es superusuario.

@@ -64,20 +64,27 @@ class User(Base):
         cascade="all, delete-orphan"
     )
     
-    # Relación con trabajos publicados (oferente)
-    jobs_posted: Mapped[list["Job"]] = relationship(
-        "Job", 
+    # Relación con anuncios publicados (oferente)
+    announcements: Mapped[list["Announcement"]] = relationship(
+        "Announcement", 
+        back_populates="offerer",
+        foreign_keys="Announcement.offerer_id"
+    )
+    
+    # Contratos donde el usuario es el oferente
+    contracts_as_offerer: Mapped[list["Contract"]] = relationship(
+        "Contract", 
         back_populates="offerer", 
-        foreign_keys="Job.offerer_id"
+        foreign_keys="[Contract.offerer_id]"
     )
-    
-    # Relación con trabajos asignados (mercenario)
-    jobs_assigned: Mapped[list["Job"]] = relationship(
-        "Job", 
+
+    # Contratos donde el usuario es el mercenario
+    contracts_as_mercenary: Mapped[list["Contract"]] = relationship(
+        "Contract", 
         back_populates="mercenary", 
-        foreign_keys="Job.assigned_mercenary_id"
+        foreign_keys="[Contract.mercenary_id]"
     )
-    
+
     # Reseñas hechas por el usuario
     reviews_given: Mapped[list["Review"]] = relationship(
         "Review", 

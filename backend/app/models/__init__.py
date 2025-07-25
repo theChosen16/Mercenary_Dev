@@ -14,7 +14,9 @@ from sqlalchemy.orm import Session, relationship, Mapped, declared_attr, mapped_
 from .base import Base
 from .user import User, UserRole
 from .profile import Profile
-from .job import Job, JobStatus
+from .announcement import Announcement, AnnouncementStatus
+from .category import Category
+from .contract import Contract, Transaction, TransactionType
 from .review import Review
 from .project import Project
 from .proposal import Proposal
@@ -26,8 +28,12 @@ __all__ = [
     'User',
     'UserRole',
     'Profile',
-    'Job',
-    'JobStatus',
+    'Announcement',
+    'AnnouncementStatus',
+    'Category',
+    'Contract',
+    'Transaction',
+    'TransactionType',
     'Review',
     'Project',
     'Proposal',
@@ -42,8 +48,11 @@ __all__ = [
     "User",
     "UserRole",
     "Profile",
-    "Job",
-    "JobStatus",
+    "Announcement",
+    "AnnouncementStatus",
+    "Category",
+    "Contract",
+    "Transaction",
     "Review",
     
     # Tipos SQLAlchemy
