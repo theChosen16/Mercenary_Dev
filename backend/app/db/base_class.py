@@ -3,12 +3,17 @@ Base class for SQLAlchemy models.
 """
 from typing import Any
 
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+from sqlalchemy import MetaData
+from sqlalchemy.orm import declarative_base, registry, declared_attr
 
 
-@as_declarative()
-class Base:
+# Create a registry for better mapper configuration
+mapper_registry = registry()
+Base = mapper_registry.generate_base()
+
+class BaseModel(Base):
     """Base class for all SQLAlchemy models."""
+    __abstract__ = True
     
     id: Any
     __name__: str

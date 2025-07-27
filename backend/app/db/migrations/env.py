@@ -17,7 +17,7 @@ from app.models.job import Job  # noqa: F401
 from app.models.project import Project  # noqa: F401
 from app.models.proposal import Proposal  # noqa: F401
 from app.models.review import Review  # noqa: F401
-from app.models.skill import Skill, UserSkill  # noqa: F401
+from app.models.skill import Skill  # noqa: F401
 from app.models.profile import Profile  # noqa: F401
 
 # This is the Alembic Config object, which provides

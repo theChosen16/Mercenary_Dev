@@ -2,9 +2,10 @@
 
 Define la estructura de los anuncios de trabajo publicados en la plataforma, que los 'Mercenarios' pueden solicitar.
 """
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import (
     Column,
@@ -17,8 +18,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, relationship
 
-from app.models.base import Base
-
+from app.db.base_class import Base
+from app.models.category import Category
+from app.models.contract import Contract
+from app.models.review import Review
+from app.models.user import User
 
 class AnnouncementStatus(str, Enum):
     """Enumeración de estados de un anuncio."""
@@ -44,6 +48,7 @@ class Announcement(Base):
     """
     __tablename__ = "announcements"
 
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
     title: Mapped[str] = Column(String(255), nullable=False)
     description: Mapped[str] = Column(Text, nullable=False)
     budget: Mapped[str | None] = Column(String(100), nullable=True)
@@ -66,11 +71,14 @@ class Announcement(Base):
     )
 
     # --- Relaciones ---
-    offerer: Mapped["User"] = relationship("User", back_populates="announcements")
-    category: Mapped["Category"] = relationship("Category", back_populates="announcements")
+    owner: Mapped[User] = relationship(back_populates="announcements")
+    category: Mapped[Category] = relationship(back_populates="announcements")
 
     # Relación uno a muchos con contratos (un anuncio puede tener varios contratos si se reabre)
-    contracts: Mapped[list["Contract"]] = relationship("Contract", back_populates="announcement")
+    contracts: Mapped[List[Contract]] = relationship(back_populates="announcement")
+    
+    # Relación uno a uno con reseñas (un anuncio puede tener una reseña)
+    reviews: Mapped[List[Review]] = relationship(back_populates="announcement", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Announcement(id={self.id}, title='{self.title}', status='{self.status}')>"

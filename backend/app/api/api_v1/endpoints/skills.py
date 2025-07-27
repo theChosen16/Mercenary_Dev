@@ -145,104 +145,104 @@ def delete_skill(
     return skill
 
 
-@router.get("/user/me", response_model=List[schemas.UserSkill])
-def read_user_skills(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Get current user's skills.
-    """
-    return crud.user_skill.get_multi_by_user(db, user_id=current_user.id)
+# @router.get("/user/me", response_model=List[schemas.UserSkill])
+# def read_user_skills(
+#     db: Session = Depends(deps.get_db),
+#     current_user: models.User = Depends(deps.get_current_active_user),
+# ) -> Any:
+#     """
+#     Get current user's skills.
+#     """
+#     return crud.user_skill.get_multi_by_user(db, user_id=current_user.id)
 
 
-@router.post("/user/me", response_model=schemas.UserSkill, status_code=status.HTTP_201_CREATED)
-def add_user_skill(
-    *,
-    db: Session = Depends(deps.get_db),
-    user_skill_in: schemas.UserSkillCreate,
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Add a skill to current user's profile.
-    """
-    # Check if skill exists
-    skill = crud.skill.get(db, id=user_skill_in.skill_id)
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found",
-        )
-    
-    # Check if user already has this skill
-    existing_user_skill = crud.user_skill.get_by_user_and_skill(
-        db, user_id=current_user.id, skill_id=user_skill_in.skill_id
-    )
-    
-    if existing_user_skill:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Skill already added to your profile",
-        )
-    
-    # Add skill to user's profile
-    user_skill = crud.user_skill.create_with_user_and_skill(
-        db=db,
-        user_id=current_user.id,
-        skill_id=user_skill_in.skill_id,
-        proficiency=user_skill_in.proficiency,
-    )
-    
-    return user_skill
+# @router.post("/user/me", response_model=schemas.UserSkill, status_code=status.HTTP_201_CREATED)
+# def add_user_skill(
+#     *,
+#     db: Session = Depends(deps.get_db),
+#     user_skill_in: schemas.UserSkillCreate,
+#     current_user: models.User = Depends(deps.get_current_active_user),
+# ) -> Any:
+#     """
+#     Add a skill to current user's profile.
+#     """
+#     # Check if skill exists
+#     skill = crud.skill.get(db, id=user_skill_in.skill_id)
+#     if not skill:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Skill not found",
+#         )
+#     
+#     # Check if user already has this skill
+#     existing_user_skill = crud.user_skill.get_by_user_and_skill(
+#         db, user_id=current_user.id, skill_id=user_skill_in.skill_id
+#     )
+#     
+#     if existing_user_skill:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Skill already added to your profile",
+#         )
+#     
+#     # Add skill to user's profile
+#     user_skill = crud.user_skill.create_with_user_and_skill(
+#         db=db,
+#         user_id=current_user.id,
+#         skill_id=user_skill_in.skill_id,
+#         proficiency=user_skill_in.proficiency,
+#     )
+#     
+#     return user_skill
 
 
-@router.put("/user/me/{skill_id}", response_model=schemas.UserSkill)
-def update_user_skill(
-    *,
-    db: Session = Depends(deps.get_db),
-    skill_id: int,
-    user_skill_in: schemas.UserSkillUpdate,
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Update current user's skill proficiency.
-    """
-    user_skill = crud.user_skill.get_by_user_and_skill(
-        db, user_id=current_user.id, skill_id=skill_id
-    )
-    
-    if not user_skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found in your profile",
-        )
-    
-    user_skill = crud.user_skill.update_proficiency(
-        db, db_obj=user_skill, proficiency=user_skill_in.proficiency
-    )
-    
-    return user_skill
-
-
-@router.delete("/user/me/{skill_id}", response_model=schemas.UserSkill)
-def remove_user_skill(
-    *,
-    db: Session = Depends(deps.get_db),
-    skill_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Remove a skill from current user's profile.
-    """
-    user_skill = crud.user_skill.get_by_user_and_skill(
-        db, user_id=current_user.id, skill_id=skill_id
-    )
-    
-    if not user_skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found in your profile",
-        )
-    
-    crud.user_skill.remove(db, id=user_skill.id)
-    return user_skill
+# @router.put("/user/me/{skill_id}", response_model=schemas.UserSkill)
+# def update_user_skill(
+#     *,
+#     db: Session = Depends(deps.get_db),
+#     skill_id: int,
+#     user_skill_in: schemas.UserSkillUpdate,
+#     current_user: models.User = Depends(deps.get_current_active_user),
+# ) -> Any:
+#     """
+#     Update current user's skill proficiency.
+#     """
+#     user_skill = crud.user_skill.get_by_user_and_skill(
+#         db, user_id=current_user.id, skill_id=skill_id
+#     )
+#     
+#     if not user_skill:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Skill not found in your profile",
+#         )
+#     
+#     user_skill = crud.user_skill.update_proficiency(
+#         db, db_obj=user_skill, proficiency=user_skill_in.proficiency
+#     )
+#     
+#     return user_skill
+# 
+# 
+# @router.delete("/user/me/{skill_id}", response_model=schemas.UserSkill)
+# def remove_user_skill(
+#     *,
+#     db: Session = Depends(deps.get_db),
+#     skill_id: int,
+#     current_user: models.User = Depends(deps.get_current_active_user),
+# ) -> Any:
+#     """
+#     Remove a skill from current user's profile.
+#     """
+#     user_skill = crud.user_skill.get_by_user_and_skill(
+#         db, user_id=current_user.id, skill_id=skill_id
+#     )
+#     
+#     if not user_skill:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Skill not found in your profile",
+#         )
+#     
+#     crud.user_skill.remove(db, id=user_skill.id)
+#     return user_skill

@@ -1,85 +1,12 @@
 """
-Paquete de modelos de la aplicación.
-
-Este paquete contiene todos los modelos de la base de datos.
+Exposes all SQLAlchemy models for discovery.
 """
-from datetime import datetime
-from typing import List, Optional, Type, TypeVar, Union, Any, Dict
-from uuid import UUID
-
-from sqlalchemy import Column, DateTime, Integer, String, Boolean, Enum, ForeignKey, Text, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, ARRAY as PgArray
-from sqlalchemy.orm import Session, relationship, Mapped, declared_attr, mapped_column
-
-from .base import Base
-from .user import User, UserRole
-from .profile import Profile
-from .announcement import Announcement, AnnouncementStatus
+from .announcement import Announcement
 from .category import Category
-from .contract import Contract, Transaction, TransactionType
-from .review import Review
-from .project import Project
+from .profile import Profile
+from .project import Project, project_skill
 from .proposal import Proposal
-from .skill import Skill, UserSkill
-
-# Ensure all models are imported and registered with Base's metadata
-__all__ = [
-    'Base',
-    'User',
-    'UserRole',
-    'Profile',
-    'Announcement',
-    'AnnouncementStatus',
-    'Category',
-    'Contract',
-    'Transaction',
-    'TransactionType',
-    'Review',
-    'Project',
-    'Proposal',
-    'Skill',
-    'UserSkill',
-]
-
-# Re-exportar tipos comunes para facilitar su uso
-__all__ = [
-    # Modelos
-    "Base",
-    "User",
-    "UserRole",
-    "Profile",
-    "Announcement",
-    "AnnouncementStatus",
-    "Category",
-    "Contract",
-    "Transaction",
-    "Review",
-    
-    # Tipos SQLAlchemy
-    "Session",
-    "Mapped",
-    "relationship",
-    "Column",
-    "Integer",
-    "String",
-    "Boolean",
-    "DateTime",
-    "Text",
-    "ForeignKey",
-    "PG_UUID",
-    "PgArray",
-    "declared_attr",
-    "mapped_column",
-    
-    # Tipos Python
-    "List",
-    "Optional",
-    "Type",
-    "TypeVar",
-    "Union",
-    "Any",
-    "Dict",
-    "UUID",
-    "datetime",
-]
-  # noqa: F401
+from .review import Review
+from .skill import Skill
+from .user import User, UserSkill
+from .contract import Contract

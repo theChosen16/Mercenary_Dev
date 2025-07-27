@@ -4,6 +4,7 @@ Modelo de Perfil de Usuario.
 Contiene información adicional para los usuarios, con campos específicos
 para mercenarios y oferentes.
 """
+from __future__ import annotations
 from typing import List, Optional
 
 from sqlalchemy import (
@@ -16,8 +17,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY as PgArray
 from sqlalchemy.orm import Mapped, relationship, Session
 
-from app.models.base import Base
-
+from app.db.base_class import Base
+from .user import User
 
 class Profile(Base):
     """Modelo de perfil de usuario.
@@ -35,6 +36,7 @@ class Profile(Base):
     """
     __tablename__ = "profiles"
 
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = Column(
         Integer, 
         ForeignKey("users.id", ondelete="CASCADE"), 
@@ -43,8 +45,8 @@ class Profile(Base):
     )
     first_name: Mapped[str] = Column(String(100), nullable=False)
     last_name: Mapped[str] = Column(String(100), nullable=False)
-    user: Mapped["User"] = relationship(
-        "User", 
+    user: Mapped[User] = relationship(
+        User, 
         back_populates="profile"
     )
     phone: Mapped[Optional[str]] = Column(String(20), nullable=True)

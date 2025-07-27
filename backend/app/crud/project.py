@@ -27,9 +27,9 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         )
         
         # Add skills to project if provided
-        if hasattr(obj_in, 'skill_ids') and obj_in.skill_ids:
-            from app.crud.skill import skill
-            db_obj.skills = skill.get_multi_by_ids(db, ids=obj_in.skill_ids)
+        # if hasattr(obj_in, 'skill_ids') and obj_in.skill_ids:
+        #     from app.crud.skill import skill
+        #     db_obj.skills = skill.get_multi_by_ids(db, ids=obj_in.skill_ids)
         
         db.add(db_obj)
         db.commit()

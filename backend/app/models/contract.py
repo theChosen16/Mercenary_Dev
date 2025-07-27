@@ -4,6 +4,7 @@ Modelo de Contrato (Contract).
 Define la estructura de los contratos entre oferentes y mercenarios,
 incluyendo el depósito en garantía (escrow) y los términos del acuerdo.
 """
+from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
@@ -22,8 +23,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, relationship
 
-from app.models.base import Base
-
+from app.db.base_class import Base
+from .user import User
+# from .announcement import Announcement  # Circular import - using forward reference instead
+# from .transaction import Transaction
 
 class ContractStatus(str, Enum):
     """Enumeración de estados de un contrato."""
@@ -55,6 +58,7 @@ class Contract(Base):
     """
     __tablename__ = "contracts"
 
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
     title: Mapped[str] = Column(String(255), nullable=False)
     description: Mapped[str] = Column(Text, nullable=False)
     terms: Mapped[Optional[str]] = Column(Text, nullable=True)
@@ -95,23 +99,22 @@ class Contract(Base):
     )
     completed_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
     
-    # Relaciones ORM
-    offerer: Mapped["User"] = relationship(
-        "User",
-        foreign_keys=[offerer_id],
-        back_populates="contracts_as_offerer"
-    )
-    mercenary: Mapped["User"] = relationship(
-        "User",
-        foreign_keys=[mercenary_id],
-        back_populates="contracts_as_mercenary"
-    )
-    announcement: Mapped["Announcement"] = relationship("Announcement", back_populates="contracts")
-    transactions: Mapped[List["Transaction"]] = relationship(
-        "Transaction",
-        back_populates="contract",
-        cascade="all, delete-orphan"
-    )
+    # Relaciones ORM (temporalmente desactivadas para resolver errores de mapeo)
+    # offerer: Mapped[User] = relationship(
+    #     User,
+    #     foreign_keys=[offerer_id],
+    #     back_populates="contracts_as_offerer"
+    # )
+    # mercenary: Mapped[User] = relationship(
+    #     User,
+    #     foreign_keys=[mercenary_id],
+    #     back_populates="contracts_as_mercenary"
+    # )
+    # announcement: Mapped["Announcement"] = relationship("Announcement", back_populates="contracts")
+        # transactions: Mapped[List["Transaction"]] = relationship(
+    #     back_populates="contract",
+    #     cascade="all, delete-orphan"
+    # )
 
     def __repr__(self) -> str:
         return f"<Contract(id={self.id}, title='{self.title}', status='{self.status}')>"
@@ -141,6 +144,7 @@ class Transaction(Base):
     """
     __tablename__ = "transactions"
     
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
     amount: Mapped[Decimal] = Column(Numeric(10, 2), nullable=False)
     transaction_type: Mapped[str] = Column(
         SQLEnum(TransactionType),

@@ -1,49 +1,56 @@
 """
-SQLAlchemy models for projects.
+Modelo de Proyecto y tabla de asociación Project-Skill.
 """
+from __future__ import annotations
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, Table, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, DateTime, Enum as SAEnum, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import Mapped, relationship
 
 from app.db.base_class import Base
+# Importaciones directas para evitar referencias string y ciclos
 from app.models.user import User
-from app.schemas.project import ProjectStatus
+from app.models.skill import Skill
 
+class ProjectStatus(str, Enum):
+    """Estado de un proyecto."""
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
-# Tabla de asociación para la relación muchos a muchos entre Project y Skill
+# Tabla de asociación para la relación muchos-a-muchos entre Project y Skill
 project_skill = Table(
     "project_skill",
     Base.metadata,
-    Column("project_id", Integer, ForeignKey("project.id"), primary_key=True),
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
     Column("skill_id", Integer, ForeignKey("skill.id"), primary_key=True),
 )
 
-
 class Project(Base):
-    """Project model for storing project information."""
-    
-    __tablename__ = "project"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(200), nullable=False)
-    description = Column(Text, nullable=False)
-    budget = Column(Integer, nullable=True)
-    status = Column(Enum(ProjectStatus), default=ProjectStatus.draft, nullable=False)
-    deadline = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
-    # Relaciones
-    offerer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    offerer = relationship("User", back_populates="projects_as_offerer", foreign_keys=[offerer_id])
-    
-    mercenary_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    mercenary = relationship("User", back_populates="projects_as_mercenary", foreign_keys=[mercenary_id])
-    
-    skills = relationship("Skill", secondary=project_skill, back_populates="projects")
-    proposals = relationship("Proposal", back_populates="project", cascade="all, delete-orphan")
-    
-    def __repr__(self):
-        return f"<Project {self.title}>"
+    """Modelo de Proyecto."""
+    __tablename__ = "projects"
+
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    title: Mapped[str] = Column(String(255), nullable=False)
+    description: Mapped[str] = Column(String, nullable=False)
+    status: Mapped[ProjectStatus] = Column(SAEnum(ProjectStatus), default=ProjectStatus.OPEN, nullable=False)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    client_id: Mapped[int] = Column(Integer, ForeignKey("users.id"))
+    freelancer_id: Mapped[Optional[int]] = Column(Integer, ForeignKey("users.id"))
+
+    client: Mapped[User] = relationship(foreign_keys=[client_id], back_populates="projects_created")
+    freelancer: Mapped[Optional[User]] = relationship(foreign_keys=[freelancer_id], back_populates="projects_assigned")
+
+    # Esta es la relación que faltaba y causaba el error de mapeo.
+    # Se vincula con la relación 'projects' en el modelo Skill.
+    # skills: Mapped[List[Skill]] = relationship(
+    #     secondary=project_skill, back_populates="projects"
+    # )
+
+    def __repr__(self) -> str:
+        return f"<Project(id={self.id}, title='{self.title}')>"
