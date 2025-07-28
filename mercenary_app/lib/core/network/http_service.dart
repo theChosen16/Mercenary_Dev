@@ -124,6 +124,72 @@ class HttpService {
     }
   }
 
+  Future<Response<T>> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      return await _dio.patch<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Obtener token de autenticación
+  String? getAuthToken() {
+    try {
+      return _dio.options.headers['Authorization'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Subir archivo
+  Future<Response> uploadFile(
+    String path,
+    String filePath, {
+    String? fileName,
+    Map<String, dynamic>? data,
+    ProgressCallback? onSendProgress,
+  }) async {
+    try {
+      final formData = FormData();
+      
+      // Agregar archivo
+      formData.files.add(MapEntry(
+        'file',
+        await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+      ));
+      
+      // Agregar datos adicionales
+      if (data != null) {
+        data.forEach((key, value) {
+          formData.fields.add(MapEntry(key, value.toString()));
+        });
+      }
+
+      final response = await _dio.post(
+        path,
+        data: formData,
+        onSendProgress: onSendProgress,
+      );
+      
+      return response;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // Manejo centralizado de errores
   Exception _handleError(dynamic error) {
     if (error is DioException) {
