@@ -1,19 +1,10 @@
 {
   "version": 2,
   "name": "mercenary-web-platform",
-  "builds": [
-    {
-      "src": "mercenary-web-platform/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/mercenary-web-platform/$1"
-    }
-  ]
+  "buildCommand": "cd mercenary-web-platform && npm run build",
+  "outputDirectory": "mercenary-web-platform/.next",
+  "installCommand": "cd mercenary-web-platform && npm install",
+  "devCommand": "cd mercenary-web-platform && npm run dev",
+  "framework": "nextjs",
+  "rootDirectory": "mercenary-web-platform"
 }
