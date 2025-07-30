@@ -40,7 +40,7 @@ class ChatService {
       _statusController ??= StreamController<ChatConnectionStatus>.broadcast();
 
       // Obtener token de autenticación
-      final token = await _httpService.getAuthToken();
+      final token = _httpService.getAuthToken();
       if (token == null) {
         throw AuthException('Token de autenticación no disponible');
       }
@@ -236,5 +236,5 @@ class ChatService {
 
 /// Excepción específica para errores de chat
 class ChatException extends AppException {
-  ChatException(String message) : super(message);
+  ChatException(super.message);
 }

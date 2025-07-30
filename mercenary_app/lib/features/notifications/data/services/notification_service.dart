@@ -456,5 +456,5 @@ class NotificationService {
 
 /// Excepción específica para errores de notificaciones
 class NotificationException extends AppException {
-  NotificationException(String message) : super(message);
+  NotificationException(super.message);
 }

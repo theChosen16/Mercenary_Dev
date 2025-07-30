@@ -29,9 +29,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  serverExternalPackages: ['@prisma/client'],
   images: {
     domains: ['localhost', 'cdn.mercenary.cl'],
     formats: ['image/webp', 'image/avif'],
