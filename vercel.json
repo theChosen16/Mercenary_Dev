@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "mercenary-web-platform",
+  "builds": [
+    {
+      "src": "mercenary-web-platform/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/mercenary-web-platform/$1"
+    }
+  ]
+}
