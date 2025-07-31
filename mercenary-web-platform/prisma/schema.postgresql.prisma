@@ -1,5 +1,9 @@
-// Prisma Schema - Mercenary Platform (SQLite Compatible)
-// Simplified version for local testing
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Prisma Schema - Mercenary Platform
+// Authentication + Core Models
 
 generator client {
   provider = "prisma-client-js"
@@ -18,12 +22,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -93,11 +97,11 @@ model Profile {
   id          String   @id @default(cuid())
   userId      String   @unique
   bio         String?
-  skills      String?  // JSON string for skills array
+  skills      String[] // Array of skills
   experience  Int      @default(0) // Years of experience
   rating      Float    @default(0.0)
   level       Int      @default(1)
-  badges      String?  // JSON string for badges array
+  badges      String[] // Array of badge IDs
   location    String?
   phone       String?
   website     String?
@@ -129,17 +133,17 @@ model Profile {
 model Project {
   id          String        @id @default(cuid())
   title       String
-  description String
+  description String        @db.Text
   budget      Float
   deadline    DateTime?
   status      ProjectStatus @default(OPEN)
   category    String
-  skills      String?       // JSON string for required skills
+  skills      String[]      // Required skills
   clientId    String
   freelancerId String?
   
   // Project details
-  attachments String?       // JSON string for file URLs
+  attachments String[]      // File URLs
   priority    Priority      @default(MEDIUM)
   complexity  Complexity    @default(MEDIUM)
   
@@ -160,12 +164,12 @@ model Project {
 
 model Message {
   id        String      @id @default(cuid())
-  content   String
+  content   String      @db.Text
   senderId  String
   receiverId String
   projectId String?
   type      MessageType @default(TEXT)
-  attachments String?   // JSON string for file URLs
+  attachments String[]  // File URLs
   isRead    Boolean     @default(false)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -211,7 +215,7 @@ model Transaction {
 model Review {
   id          String   @id @default(cuid())
   rating      Int      // 1-5 stars
-  comment     String?
+  comment     String?  @db.Text
   reviewerId  String
   revieweeId  String
   projectId   String
@@ -233,11 +237,11 @@ model Review {
 model Notification {
   id        String           @id @default(cuid())
   title     String
-  message   String
+  message   String           @db.Text
   type      NotificationType
   userId    String
   isRead    Boolean          @default(false)
-  data      String?          // JSON string for additional data
+  data      Json?            // Additional data as JSON
   
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
