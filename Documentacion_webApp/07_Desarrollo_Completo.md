@@ -1,11 +1,12 @@
 # 🚀 Desarrollo Completo - Plataforma Web Mercenary
 
-## ✅ Estado: COMPLETADO
+## ✅ Estado: COMPLETADO Y DEPLOYADO
 
 **Fecha de finalización:** 30 de Enero, 2025  
 **Versión:** 1.0.0  
 **Estado del build:** ✅ Exitoso  
-**Deployment:** ✅ Ready for Vercel  
+**Deployment:** ✅ ONLINE en Vercel  
+**URL de producción:** [https://mercenary-dev.vercel.app](https://mercenary-dev.vercel.app)  
 
 ---
 
