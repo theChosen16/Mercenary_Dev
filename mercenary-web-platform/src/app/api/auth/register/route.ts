@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Remove password from response
-    const { password, ...userWithoutPassword } = user
+    const { password: _, ...userWithoutPassword } = user
 
     return NextResponse.json({
       message: "Usuario creado exitosamente",
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Datos inválidos", details: error.errors },
+        { error: "Datos inválidos", details: error.issues },
         { status: 400 }
       )
     }

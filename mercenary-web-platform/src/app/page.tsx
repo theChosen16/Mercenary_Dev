@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Trophy, Star, Users, Zap, Shield, Clock } from 'lucide-react'
 

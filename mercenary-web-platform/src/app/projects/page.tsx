@@ -11,7 +11,6 @@ import {
   Filter, 
   Clock, 
   DollarSign, 
-  MapPin, 
   Star,
   Briefcase,
   Users,
@@ -142,6 +141,7 @@ export default function ProjectsPage() {
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
               className="px-3 py-2 border rounded-md bg-background"
+              aria-label="Filtrar por dificultad"
             >
               <option value="">Todas las dificultades</option>
               <option value="beginner">Principiante</option>
@@ -153,6 +153,7 @@ export default function ProjectsPage() {
               value={selectedBudget}
               onChange={(e) => setSelectedBudget(e.target.value)}
               className="px-3 py-2 border rounded-md bg-background"
+              aria-label="Filtrar por presupuesto"
             >
               <option value="">Todos los presupuestos</option>
               <option value="low">Hasta $30.000</option>

@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -60,31 +60,32 @@ model VerificationToken {
 // ===== CORE USER MODELS =====
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String?   // null for OAuth users
-  name          String
-  image         String?
-  role          Role      @default(FREELANCER)
-  emailVerified DateTime?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String    @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String
+  role                    UserRole  @default(CLIENT)
+  isActive                Boolean   @default(true)
+  lastLoginAt             DateTime?
+  notificationPreferences String?   // JSON string for notification preferences
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  // Authentication relations
-  accounts Account[]
-  sessions Session[]
-
-  // Core relations
-  profile          Profile?
-  projectsAsClient Project[] @relation("ClientProjects")
-  projectsAsFreelancer Project[] @relation("FreelancerProjects")
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  transactions     Transaction[]
-  notifications    Notification[]
-  reviews          Review[]
-  reviewsReceived  Review[] @relation("ReviewsReceived")
+  // Relations
+  accounts                Account[]
+  sessions                Session[]
+  profile                 Profile?
+  projects                Project[]  @relation("ClientProjects")
+  freelancerProjects      Project[]  @relation("FreelancerProjects")
+  sentMessages            Message[]  @relation("SentMessages")
+  receivedMessages        Message[]  @relation("ReceivedMessages")
+  notifications           Notification[]
+  payments                Payment[]
+  reviews                 Review[]
+  transactions            Transaction[]
+  devices                 Device[]  // Mobile devices
 
   @@map("users")
 }
@@ -250,18 +251,18 @@ model Notification {
 
 // ===== ENUMS =====
 
-enum Role {
+enum UserRole {
   CLIENT
   FREELANCER
   ADMIN
 }
 
 enum ProjectStatus {
-  OPEN
+  DRAFT
+  ACTIVE
   IN_PROGRESS
   COMPLETED
   CANCELLED
-  DISPUTED
 }
 
 enum Priority {
@@ -288,16 +289,13 @@ enum MessageType {
 enum TransactionType {
   PAYMENT
   REFUND
-  WITHDRAWAL
-  DEPOSIT
-  FEE
+  COMMISSION
 }
 
 enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
-  CANCELLED
 }
 
 enum NotificationType {
