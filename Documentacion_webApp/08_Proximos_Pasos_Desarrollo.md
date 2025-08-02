@@ -51,7 +51,7 @@
 
 #### **Funcionalidades:**
 - ✅ **Integración MercadoPago** (ya implementado en móvil)
-- ✅ **Stripe/PayPal** para pagos internacionales
+- ✅ **MercadoPago** para pagos latinoamericanos
 - ✅ **Escrow system** (dinero en custodia)
 - ✅ **Facturación automática** y recibos
 - ✅ **Dashboard financiero** para freelancers

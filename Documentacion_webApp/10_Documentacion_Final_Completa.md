@@ -15,7 +15,7 @@ La **Plataforma Web Mercenary** ha sido desarrollada completamente con todas las
 - **ORM:** Prisma con schema completo
 - **Autenticación:** NextAuth.js con OAuth (Google, GitHub)
 - **Real-time:** WebSockets para chat
-- **Pagos:** Stripe para escrow y transacciones
+- **Pagos:** MercadoPago para escrow y transacciones
 - **Notificaciones:** Push notifications + Email (Resend)
 - **Testing:** Playwright para E2E
 - **Deployment:** Vercel con CI/CD
@@ -102,7 +102,7 @@ mercenary-web-platform/
 - ✅ Compartir archivos y enlaces
 
 ### **6. 💰 Sistema de Pagos y Escrow**
-- ✅ Integración completa con Stripe
+- ✅ Integración completa con MercadoPago
 - ✅ Sistema de escrow seguro
 - ✅ Liberación de pagos por hitos
 - ✅ Historial de transacciones
@@ -208,7 +208,7 @@ GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 
 # Servicios externos
-STRIPE_SECRET_KEY=...
+MERCADOPAGO_ACCESS_TOKEN=...
 RESEND_API_KEY=...
 SUPABASE_URL=...
 SUPABASE_ANON_KEY=...

@@ -247,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(BuildContext context, ChatMessage message) {
     // TODO: Obtener el ID del usuario actual
-    final isMe = true; // Placeholder - debería comparar con el ID del usuario actual
+    final isMe = message.senderId == 'current_user_id'; // Placeholder - debería comparar con el ID del usuario actual
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

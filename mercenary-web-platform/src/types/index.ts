@@ -92,6 +92,7 @@ export interface Badge {
   icon: string
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
   earned_at?: string
+  category: 'STREAK' | 'COMPLETION' | 'SPEED' | 'SOCIAL' | 'SPECIAL'
 }
 
 export interface Achievement {
@@ -100,6 +101,62 @@ export interface Achievement {
   badge_id: string
   earned_at: string
   badge: Badge
+}
+
+export interface UserStreak {
+  current_streak: number
+  longest_streak: number
+  last_completed_job: string
+  total_completed_jobs: number
+}
+
+export interface Mission {
+  id: string
+  title: string
+  description: string
+  type: 'DAILY' | 'WEEKLY' | 'MONTHLY'
+  xp_reward: number
+  requirements: Record<string, any>
+  expires_at: string
+  completed: boolean
+}
+
+// Subscription types
+export interface SubscriptionPlan {
+  id: string
+  name: string
+  price: number
+  currency: string
+  interval: 'monthly' | 'yearly'
+  features: {
+    max_active_jobs: number
+    max_job_posts: number
+    detailed_profiles: boolean
+    social_links_access: boolean
+    priority_support: boolean
+    reduced_fees: number // percentage reduction
+    advanced_analytics: boolean
+  }
+}
+
+export interface UserSubscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: 'active' | 'cancelled' | 'expired' | 'trial'
+  current_period_start: string
+  current_period_end: string
+  cancel_at_period_end: boolean
+  plan: SubscriptionPlan
+}
+
+export interface UserLimits {
+  max_active_jobs: number
+  max_job_posts: number
+  current_active_jobs: number
+  current_job_posts: number
+  can_view_detailed_profiles: boolean
+  can_access_social_links: boolean
 }
 
 // Payment types

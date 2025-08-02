@@ -11,7 +11,6 @@ import {
   Briefcase, 
   DollarSign, 
   TrendingUp, 
-  Clock,
   MessageSquare,
   Bell,
   Award,
@@ -189,8 +188,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
                     <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(mockUser.experience_points / 3000) * 100}%` }}
+                      className="bg-primary h-2 rounded-full progress-bar-dynamic"
+                      style={{ '--progress-width': `${(mockUser.experience_points / 3000) * 100}%` } as React.CSSProperties}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">

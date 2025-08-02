@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { 
   TrendingUp, TrendingDown, Users, Briefcase, DollarSign, 
   Clock, Star, Activity, Download, RefreshCw, Calendar,
-  BarChart3, PieChart, LineChart, Target, Zap, Globe
+  BarChart3, PieChart, Target, Zap
 } from 'lucide-react'
 import { AnalyticsMetrics, AnalyticsService } from '@/lib/analytics'
 
@@ -13,21 +13,51 @@ interface AnalyticsDashboardProps {
   isAdmin?: boolean
 }
 
+interface RealTimeMetrics {
+  activeUsers: number
+  onlineUsers: number
+  newProjectsLastHour: number
+  newApplicationsLastHour: number
+  revenueToday: number
+  timestamp: Date
+}
+
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   userId,
   isAdmin = false
 }) => {
   const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null)
-  const [realTimeMetrics, setRealTimeMetrics] = useState<any>(null)
+  const [realTimeMetrics, setRealTimeMetrics] = useState<RealTimeMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | '90d' | '1y'>('30d')
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'projects' | 'financial' | 'performance'>('overview')
 
   useEffect(() => {
+    const loadAnalytics = async () => {
+      setLoading(true)
+      try {
+        const data = await AnalyticsService.getDashboardMetrics(timeRange, userId)
+        setMetrics(data)
+      } catch (error) {
+        console.error('Error loading analytics:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const loadRealTimeMetrics = async () => {
+      try {
+        const data = await AnalyticsService.getRealTimeMetrics()
+        setRealTimeMetrics(data)
+      } catch (error) {
+        console.error('Error loading real-time metrics:', error)
+      }
+    }
+
     loadAnalytics()
     const interval = setInterval(loadRealTimeMetrics, 30000) // Update every 30 seconds
     return () => clearInterval(interval)
-  }, [timeRange])
+  }, [timeRange, userId])
 
   const loadAnalytics = async () => {
     setLoading(true)
@@ -41,18 +71,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }
   }
 
-  const loadRealTimeMetrics = async () => {
-    try {
-      const data = await AnalyticsService.getRealTimeMetrics()
-      setRealTimeMetrics(data)
-    } catch (error) {
-      console.error('Error loading real-time metrics:', error)
-    }
-  }
-
   const downloadReport = async (type: 'users' | 'projects' | 'financial' | 'performance') => {
     try {
-      const report = await AnalyticsService.generateReport(type, timeRange, 'csv')
+      // Only use supported time ranges for reports
+      const reportTimeRange = (['24h', '7d'].includes(timeRange)) ? '30d' : timeRange as '30d' | '90d' | '1y'
+      const report = await AnalyticsService.generateReport(type, reportTimeRange, 'csv')
       const blob = new Blob([report as string], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -109,7 +132,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           {/* Time Range Selector */}
           <select
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as any)}
+            onChange={(e) => setTimeRange(e.target.value as '24h' | '7d' | '30d' | '90d' | '1y')}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             aria-label="Seleccionar rango de tiempo"
           >
@@ -172,16 +195,16 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
-          {[
-            { id: 'overview', label: 'Resumen', icon: BarChart3 },
-            { id: 'users', label: 'Usuarios', icon: Users },
-            { id: 'projects', label: 'Proyectos', icon: Briefcase },
-            { id: 'financial', label: 'Financiero', icon: DollarSign },
-            { id: 'performance', label: 'Rendimiento', icon: Zap }
-          ].map((tab) => (
+          {([
+            { id: 'overview' as const, label: 'Resumen', icon: BarChart3 },
+            { id: 'users' as const, label: 'Usuarios', icon: Users },
+            { id: 'projects' as const, label: 'Proyectos', icon: Briefcase },
+            { id: 'financial' as const, label: 'Financiero', icon: DollarSign },
+            { id: 'performance' as const, label: 'Rendimiento', icon: Zap }
+          ] as const).map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
@@ -324,8 +347,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className={`bg-green-${(index + 1) * 100} h-2 rounded-full transition-all duration-300`}
-                        style={{ width: `${category.percentage}%` }}
+                        className={`bg-green-${(index + 1) * 100} h-2 rounded-full progress-bar-dynamic`}
+                        style={{ '--progress-width': `${category.percentage}%` } as React.CSSProperties}
                       ></div>
                     </div>
                   </div>
