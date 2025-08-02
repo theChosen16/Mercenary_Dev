@@ -70,6 +70,18 @@ model User {
   isActive                Boolean   @default(true)
   lastLoginAt             DateTime?
   notificationPreferences String?   // JSON string for notification preferences
+  
+  // Security fields
+  two_factor_enabled      Boolean   @default(false)
+  two_factor_secret       String?
+  two_factor_backup_codes String?   // JSON array of hashed backup codes
+  account_locked_until    DateTime?
+  status                  String    @default("ACTIVE") // ACTIVE, SUSPENDED, BANNED
+  suspended_until         DateTime?
+  suspension_reason       String?
+  ban_reason              String?
+  longest_streak          Int       @default(0)
+  
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -86,6 +98,21 @@ model User {
   reviews                 Review[]
   transactions            Transaction[]
   devices                 Device[]  // Mobile devices
+  
+  // Security relations
+  encryptionKey           UserEncryptionKey?
+  archivedKeys            ArchivedEncryptionKey[]
+  biometricChallenges     BiometricChallenge[]
+  userSessions            UserSession[]
+  encryptedMessages       EncryptedChatMessage[]
+  ephemeralKeys           EphemeralChatKey[]
+  auditLogs               AuditLog[]
+  securityLogs            SecurityLog[]
+  securityAlerts          SecurityAlert[]
+  submittedReports        AbuseReport[] @relation("ReportedBy")
+  receivedReports         AbuseReport[] @relation("ReceivedReports")
+  trustScore              UserTrustScore?
+  warnings                UserWarning[]
 
   @@map("users")
 }
