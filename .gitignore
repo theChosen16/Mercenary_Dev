@@ -1,4 +1,40 @@
-
-
 #Ignore vscode AI rules
 .github\copilot-instructions.md
+
+# Root ignores
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environments
+.env
+.env.*
+!.env.example
+!.env.local
+!.env.local.sqlite
+!.env.security.example
+
+# Node/Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.vercel
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Misc
+*.zip
