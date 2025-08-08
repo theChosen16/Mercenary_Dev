@@ -1,28 +1,8 @@
 import { NextAuthOptions } from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import GoogleProvider from "next-auth/providers/google"
-import GitHubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import { prisma } from "./prisma"
-import { Role } from "@prisma/client"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
-    // Google OAuth Provider
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    
-    // GitHub OAuth Provider
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
-    
-    // Email/Password Provider
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -34,36 +14,16 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
-            include: { profile: true }
-          })
-
-          if (!user || !user.password) {
-            return null
-          }
-
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          )
-
-          if (!isPasswordValid) {
-            return null
-          }
-
+        // Simplified auth for testing - replace with real DB logic later
+        if (credentials.email === "test@test.com" && credentials.password === "password") {
           return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            role: user.role,
+            id: "1",
+            email: credentials.email,
+            name: "Test User"
           }
-        } catch (error) {
-          console.error("Auth error:", error)
-          return null
         }
+
+        return null
       }
     })
   ],
@@ -74,70 +34,30 @@ export const authOptions: NextAuthOptions = {
   },
   
   callbacks: {
-    async jwt({ token, user, account }) {
-      // Initial sign in
+    async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.userId = user.id
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
       }
-      
-      // OAuth sign in
-      if (account && user) {
-        // Create or update user profile for OAuth users
-        const existingUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          include: { profile: true }
-        })
-        
-        if (existingUser && !existingUser.profile) {
-          await prisma.profile.create({
-            data: {
-              userId: existingUser.id,
-              bio: `${existingUser.role === 'CLIENT' ? 'Cliente' : 'Freelancer'} en Mercenary`,
-            }
-          })
-        }
-      }
-      
       return token
     },
     
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.userId as string
-        session.user.role = token.role as Role
+      if (token && session.user) {
+        session.user.id = token.id as string
+        session.user.email = token.email as string
+        session.user.name = token.name as string
       }
       return session
-    },
-    
-    async signIn({ account }) {
-      // Allow OAuth sign ins
-      if (account?.provider !== "credentials") {
-        return true
-      }
-      
-      // Allow credentials sign in
-      return true
     }
   },
   
   pages: {
     signIn: "/login",
-    signUp: "/register",
-    error: "/auth/error",
+    error: "/auth/error"
   },
   
-  events: {
-    async createUser({ user }) {
-      // Create default profile for new users
-      await prisma.profile.create({
-        data: {
-          userId: user.id,
-          bio: `${user.role === 'CLIENT' ? 'Cliente' : 'Freelancer'} en Mercenary`,
-        }
-      })
-    }
-  },
-  
+  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development",
   debug: process.env.NODE_ENV === "development",
 }

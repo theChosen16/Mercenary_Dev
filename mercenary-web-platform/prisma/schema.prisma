@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -100,19 +100,23 @@ model User {
   devices                 Device[]  // Mobile devices
   
   // Security relations
+  twoFactorAuth           TwoFactorAuth?
   encryptionKey           UserEncryptionKey?
   archivedKeys            ArchivedEncryptionKey[]
   biometricChallenges     BiometricChallenge[]
   userSessions            UserSession[]
-  encryptedMessages       EncryptedChatMessage[]
+  sentEncryptedMessages   EncryptedChatMessage[] @relation("SentEncryptedMessages")
+  receivedEncryptedMessages EncryptedChatMessage[] @relation("ReceivedEncryptedMessages")
   ephemeralKeys           EphemeralChatKey[]
   auditLogs               AuditLog[]
   securityLogs            SecurityLog[]
   securityAlerts          SecurityAlert[]
+  fraudDetections         FraudDetection[]
   submittedReports        AbuseReport[] @relation("ReportedBy")
   receivedReports         AbuseReport[] @relation("ReceivedReports")
   trustScore              UserTrustScore?
   warnings                UserWarning[]
+  reviewsReceived         Review[] @relation("ReviewsReceived")
 
   @@map("users")
 }
@@ -160,7 +164,7 @@ model Project {
   description String
   budget      Float
   deadline    DateTime?
-  status      ProjectStatus @default(OPEN)
+  status      ProjectStatus @default(DRAFT)
   category    String
   skills      String?       // JSON string for required skills
   clientId    String
@@ -332,4 +336,407 @@ enum NotificationType {
   REVIEW
   SYSTEM
   MARKETING
+}
+
+// ===== SECURITY MODELS =====
+
+// Two-Factor Authentication
+model TwoFactorAuth {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  secret      String   // Encrypted TOTP secret
+  backupCodes String   // Encrypted backup codes JSON
+  isEnabled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor_auth")
+}
+
+// User Sessions
+model UserSession {
+  id              String    @id @default(cuid())
+  userId          String
+  sessionToken    String    @unique
+  deviceId        String
+  ipAddress       String
+  userAgent       String
+  location        String?
+  isActive        Boolean   @default(true)
+  isTrusted       Boolean   @default(false)
+  lastActivity    DateTime  @default(now())
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+// Device Management
+model Device {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceId     String   @unique
+  deviceName   String
+  deviceType   String   // mobile, desktop, tablet
+  platform     String   // iOS, Android, Windows, etc.
+  fingerprint  String   // Device fingerprint hash
+  isRegistered Boolean  @default(false)
+  isTrusted    Boolean  @default(false)
+  lastSeen     DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("devices")
+}
+
+// Biometric Challenges
+model BiometricChallenge {
+  id          String   @id @default(cuid())
+  userId      String
+  challenge   String   // Encrypted challenge data
+  deviceId    String
+  isCompleted Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("biometric_challenges")
+}
+
+// Chat Encryption Keys
+model UserEncryptionKey {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  publicKey  String   // RSA public key
+  privateKey String   // Encrypted RSA private key
+  keyVersion Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_encryption_keys")
+}
+
+// Archived Encryption Keys
+model ArchivedEncryptionKey {
+  id         String   @id @default(cuid())
+  userId     String
+  publicKey  String
+  privateKey String   // Encrypted
+  keyVersion Int
+  archivedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("archived_encryption_keys")
+}
+
+// Encrypted Chat Messages
+model EncryptedChatMessage {
+  id              String   @id @default(cuid())
+  messageId       String   @unique // Reference to original message
+  senderId        String
+  receiverId      String
+  encryptedData   String   // AES encrypted message
+  keyFingerprint  String   // Key used for encryption
+  ephemeralKeyId  String?
+  integrityHash   String   // Message integrity verification
+  createdAt       DateTime @default(now())
+
+  sender        User              @relation("SentEncryptedMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver      User              @relation("ReceivedEncryptedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  ephemeralKey  EphemeralChatKey? @relation(fields: [ephemeralKeyId], references: [id])
+
+  @@map("encrypted_chat_messages")
+}
+
+// Ephemeral Chat Keys
+model EphemeralChatKey {
+  id          String   @id @default(cuid())
+  userId      String
+  keyData     String   // Encrypted ephemeral key
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages EncryptedChatMessage[]
+
+  @@map("ephemeral_chat_keys")
+}
+
+// Audit Logs
+model AuditLog {
+  id          String               @id @default(cuid())
+  userId      String?
+  action      String               // Action performed
+  resource    String               // Resource affected
+  details     String?              // JSON details
+  ipAddress   String
+  userAgent   String
+  severity    AuditLogSeverity     @default(LOW)
+  status      AuditLogStatus       @default(SUCCESS)
+  createdAt   DateTime             @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+// Security Logs
+model SecurityLog {
+  id          String              @id @default(cuid())
+  userId      String?
+  eventType   SecurityEventType
+  description String
+  severity    SecuritySeverity    @default(LOW)
+  ipAddress   String
+  userAgent   String
+  metadata    String?             // JSON metadata
+  resolved    Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("security_logs")
+}
+
+// Security Alerts
+model SecurityAlert {
+  id          String           @id @default(cuid())
+  userId      String?
+  alertType   SecurityAlertType
+  title       String
+  description String
+  severity    SecuritySeverity @default(MEDIUM)
+  isResolved  Boolean          @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  createdAt   DateTime         @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("security_alerts")
+}
+
+// Rate Limiting
+model RateLimit {
+  id          String   @id @default(cuid())
+  identifier  String   // IP or user ID
+  endpoint    String   // API endpoint
+  requests    Int      @default(1)
+  windowStart DateTime @default(now())
+  isBlocked   Boolean  @default(false)
+  blockedUntil DateTime?
+
+  @@unique([identifier, endpoint])
+  @@map("rate_limits")
+}
+
+// Fraud Detection
+model FraudDetection {
+  id            String          @id @default(cuid())
+  userId        String?
+  ipAddress     String
+  action        String          // Action being monitored
+  riskScore     Int             @default(0) // 0-100
+  riskFactors   String          // JSON array of risk factors
+  decision      FraudDecision   @default(ALLOW)
+  reviewRequired Boolean        @default(false)
+  createdAt     DateTime        @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("fraud_detection")
+}
+
+// Abuse Reports
+model AbuseReport {
+  id          String            @id @default(cuid())
+  reporterId  String
+  reportedId  String
+  category    AbuseCategory
+  description String
+  evidence    String?           // JSON evidence data
+  status      AbuseReportStatus @default(PENDING)
+  priority    AbusePriority     @default(MEDIUM)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  resolution  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  reporter User @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported User @relation("ReceivedReports", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@map("abuse_reports")
+}
+
+// User Trust Score
+model UserTrustScore {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  overallScore          Int      @default(50) // 0-100
+  accountAgeScore       Int      @default(0)
+  verificationScore     Int      @default(0)
+  activityScore         Int      @default(0)
+  reputationScore       Int      @default(0)
+  behaviorScore         Int      @default(50)
+  lastCalculated        DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_trust_scores")
+}
+
+// User Warnings
+model UserWarning {
+  id          String        @id @default(cuid())
+  userId      String
+  type        WarningType
+  reason      String
+  description String?
+  severity    WarningSeverity @default(LOW)
+  isActive    Boolean       @default(true)
+  expiresAt   DateTime?
+  issuedBy    String        // Admin user ID
+  createdAt   DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_warnings")
+}
+
+// Payment Model (missing)
+model Payment {
+  id            String          @id @default(cuid())
+  userId        String
+  amount        Float
+  currency      String          @default("CLP")
+  method        PaymentMethod
+  status        PaymentStatus   @default(PENDING)
+  externalId    String?         // MercadoPago payment ID
+  description   String?
+  metadata      String?         // JSON metadata
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  processedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ===== SECURITY ENUMS =====
+
+enum AuditLogSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AuditLogStatus {
+  SUCCESS
+  FAILURE
+  ERROR
+}
+
+enum SecurityEventType {
+  LOGIN_ATTEMPT
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  PASSWORD_CHANGE
+  EMAIL_CHANGE
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+  SUSPICIOUS_ACTIVITY
+  ACCOUNT_LOCKED
+  SESSION_EXPIRED
+}
+
+enum SecuritySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SecurityAlertType {
+  BRUTE_FORCE
+  SUSPICIOUS_LOGIN
+  MULTIPLE_FAILED_ATTEMPTS
+  UNUSUAL_ACTIVITY
+  ACCOUNT_COMPROMISE
+  DATA_BREACH
+}
+
+enum FraudDecision {
+  ALLOW
+  CHALLENGE
+  BLOCK
+}
+
+enum AbuseCategory {
+  SPAM
+  HARASSMENT
+  FRAUD
+  INAPPROPRIATE_CONTENT
+  FAKE_PROFILE
+  SCAM
+}
+
+enum AbuseReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum AbusePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WarningType {
+  BEHAVIOR
+  CONTENT
+  SPAM
+  FRAUD
+  TERMS_VIOLATION
+}
+
+enum WarningSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  FINAL
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  MERCADOPAGO
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
 }

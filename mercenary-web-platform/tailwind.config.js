@@ -1,7 +1,4 @@
-import { fontFamily } from 'tailwindcss/defaultTheme'
-import forms from '@tailwindcss/forms'
-import typography from '@tailwindcss/typography'
-import aspectRatio from '@tailwindcss/aspect-ratio'
+const { fontFamily } = require('tailwindcss/defaultTheme')
 
 /** @type {import('tailwindcss').Config} */
 const config = {
@@ -119,10 +116,10 @@ const config = {
     },
   },
   plugins: [
-    forms,
-    typography,
-    aspectRatio,
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio'),
   ],
 }
 
-export default config
+module.exports = config
