@@ -17,3 +17,6 @@
 
 # Use CRLF for Windows PowerShell scripts
 *.ps1 text eol=crlf
+
+# Git hooks (use LF to run under git-bash)
+.husky/* text eol=lf
