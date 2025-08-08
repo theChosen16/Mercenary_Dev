@@ -38,3 +38,7 @@ build/
 
 # Misc
 *.zip
+
+# Backups (consolidation renames)
+/backups/
+/**/*.backup-*

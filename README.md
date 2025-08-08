@@ -2,16 +2,14 @@
 
 A full‑stack, gamified freelance platform.
 
-- Production platform: https://mercenary-dev.vercel.app
-- Marketing website: https://mercenary-job.netlify.app/
+- Production platform: [https://mercenary-dev.vercel.app](https://mercenary-dev.vercel.app)
 
 ## Repository Structure
 
 - `backend/` — FastAPI service (PostgreSQL, Alembic, Docker). See `backend/README.md`.
-- `mercenary-web-platform/` — Next.js 15 + TypeScript + Tailwind + Prisma + NextAuth. Tests with Vitest + Playwright. See `mercenary-web-platform/README.md`.
-- `mercenary_app/` — Flutter mobile app (Android, iOS, web, desktop). See `mercenary_app/README.md`.
-- `mercenary-website/` — Static marketing site (Netlify). See `mercenary-website/README.md`.
-- `website/` — Informational site (local server via `website/server.py`).
+- `web-app/` — Next.js 15 + TypeScript + Tailwind + Prisma + NextAuth. Tests with Vitest + Playwright. See `web-app/README.md`.
+- `mobile-app/` — Flutter mobile app (Android, iOS, web, desktop). See `mobile-app/README.md`.
+- `web-informative/` — Static marketing site (Netlify). See `web-informative/README.md`. Local testing server: `web-informative/server.py`.
 - `Documentacion*/` — Central documentation sets for backend, frontend, web app, users, and DevOps. See:
   - `Documentacion/README.md`
   - `Documentacion_backend/README.md`
@@ -24,9 +22,9 @@ A full‑stack, gamified freelance platform.
 ## Quick Start
 
 - Backend API: follow `backend/README.md` (env, migrations, run, tests).
-- Web Platform: follow `mercenary-web-platform/README.md` (env, dev, tests with Vitest/Playwright).
-- Mobile App: follow `mercenary_app/README.md` (Flutter setup, run, build).
-- Websites: see `mercenary-website/README.md` and `website/`.
+- Web Platform: follow `web-app/README.md` (env, dev, tests with Vitest/Playwright).
+- Mobile App: follow `mobile-app/README.md` (Flutter setup, run, build).
+- Informative Website: see `web-informative/README.md` (local run: `python web-informative/server.py`).
 
 ## Environments
 

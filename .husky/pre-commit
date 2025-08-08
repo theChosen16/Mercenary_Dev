@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
-# Pre-commit hook: run lint-staged for the web platform
-cd mercenary-web-platform || exit 1
-npx lint-staged
+# Pre-commit hook: lint web-app (skip if not configured)
+cd web-app || exit 1
+npm run -s lint --if-present
