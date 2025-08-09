@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
-# Pre-commit hook: lint web-app (skip if not configured)
+# Pre-commit: lint staged files in web-app
 cd web-app || exit 1
-npm run -s lint --if-present
+if [ -d node_modules ]; then
+  npx lint-staged
+else
+  echo "Skipping lint-staged (node_modules not installed)"
+fi
