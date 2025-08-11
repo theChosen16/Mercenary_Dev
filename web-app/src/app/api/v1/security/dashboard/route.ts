@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { SecurityService } from '@/lib/security'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // Check if user is admin
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true }
+      select: { role: true },
     })
 
     if (user?.role !== 'ADMIN') {
@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const timeRange = searchParams.get('timeRange') as '24h' | '7d' | '30d' || '24h'
+    const timeRange =
+      (searchParams.get('timeRange') as '24h' | '7d' | '30d') || '24h'
 
     const dashboardData = await SecurityService.getSecurityDashboard(timeRange)
 

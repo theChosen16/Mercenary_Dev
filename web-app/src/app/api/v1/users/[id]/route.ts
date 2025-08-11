@@ -1,22 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
 
 interface RouteParams {
-  params: { id: string };
+  params: { id: string }
 }
 
 // GET /api/v1/users/[id] - Get user by ID
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth()
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
@@ -36,8 +32,8 @@ export async function GET(
             completedProjects: true,
             level: true,
             experience: true,
-            badges: true
-          }
+            badges: true,
+          },
         },
         projects: {
           select: {
@@ -45,10 +41,10 @@ export async function GET(
             title: true,
             status: true,
             budget: true,
-            createdAt: true
+            createdAt: true,
           },
           take: 5,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         },
         reviews: {
           select: {
@@ -59,27 +55,27 @@ export async function GET(
             reviewer: {
               select: {
                 name: true,
-                image: true
-              }
-            }
+                image: true,
+              },
+            },
           },
           take: 5,
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(user)
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching user:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -88,31 +84,37 @@ const updateUserSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
   role: z.enum(['CLIENT', 'FREELANCER', 'ADMIN']).optional(),
-  profile: z.object({
-    bio: z.string().optional(),
-    skills: z.array(z.string()).optional()
-  }).optional()
-});
+  profile: z
+    .object({
+      bio: z.string().optional(),
+      skills: z.array(z.string()).optional(),
+    })
+    .optional(),
+})
 
-export async function PUT(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth()
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Users can only update their own profile, admins can update any
     if (session.user.id !== params.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json();
-    const validatedData = updateUserSchema.parse(body);
+    const body = await request.json()
+    const validatedData = updateUserSchema.parse(body)
 
-    const { profile, ...userData } = validatedData;
+    const { profile, ...userData } = validatedData
+
+    // Prepare nested profile update ensuring types match Prisma schema
+    // schema.prisma defines `Profile.skills` as `String?` (JSON string), not string[]
+    const profileUpdate: { bio?: string; skills?: string } = {}
+    if (profile?.bio !== undefined) profileUpdate.bio = profile.bio
+    if (profile?.skills !== undefined)
+      profileUpdate.skills = JSON.stringify(profile.skills)
 
     const user = await prisma.user.update({
       where: { id: params.id },
@@ -120,9 +122,9 @@ export async function PUT(
         ...userData,
         ...(profile && {
           profile: {
-            update: profile
-          }
-        })
+            update: profileUpdate,
+          },
+        }),
       },
       select: {
         id: true,
@@ -135,50 +137,47 @@ export async function PUT(
             bio: true,
             skills: true,
             rating: true,
-            completedProjects: true
-          }
-        }
-      }
-    });
+            completedProjects: true,
+          },
+        },
+      },
+    })
 
-    return NextResponse.json(user);
+    return NextResponse.json(user)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
-      );
+      )
     }
 
-    console.error('Error updating user:', error);
+    console.error('Error updating user:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }
 
 // DELETE /api/v1/users/[id] - Delete user (admin only)
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth()
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     await prisma.user.delete({
-      where: { id: params.id }
-    });
+      where: { id: params.id },
+    })
 
-    return NextResponse.json({ message: 'User deleted successfully' });
+    return NextResponse.json({ message: 'User deleted successfully' })
   } catch (error) {
-    console.error('Error deleting user:', error);
+    console.error('Error deleting user:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }

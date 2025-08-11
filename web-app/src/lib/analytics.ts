@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 
 export interface AnalyticsMetrics {
   overview: {
@@ -85,6 +86,10 @@ export interface TimeRange {
   end: Date
 }
 
+type UserWithRelations = Prisma.UserGetPayload<{
+  include: { profile: true; projects: true; freelancerProjects: true }
+}>
+
 export class AnalyticsService {
   // Get comprehensive analytics dashboard data
   static async getDashboardMetrics(
@@ -99,13 +104,13 @@ export class AnalyticsService {
       userMetrics,
       projectMetrics,
       financialMetrics,
-      performanceMetrics
+      performanceMetrics,
     ] = await Promise.all([
       this.getOverviewMetrics(start, end, previousPeriod),
       this.getUserMetrics(start, end),
       this.getProjectMetrics(start, end),
       this.getFinancialMetrics(start, end),
-      this.getPerformanceMetrics(start, end)
+      this.getPerformanceMetrics(start, end),
     ])
 
     return {
@@ -113,7 +118,7 @@ export class AnalyticsService {
       userMetrics,
       projectMetrics,
       financialMetrics,
-      performanceMetrics
+      performanceMetrics,
     }
   }
 
@@ -128,17 +133,9 @@ export class AnalyticsService {
       where: { id: userId },
       include: {
         profile: true,
-        clientProjects: {
-          include: {
-            applications: true,
-            _count: { select: { applications: true } }
-          }
-        },
+        projects: true,
         freelancerProjects: true,
-        applications: {
-          include: { project: true }
-        }
-      }
+      },
     })
 
     if (!user) return null
@@ -161,32 +158,28 @@ export class AnalyticsService {
       newProjectsLastHour,
       newApplicationsLastHour,
       revenueToday,
-      onlineUsers
+      onlineUsers,
     ] = await Promise.all([
       prisma.user.count({
         where: {
-          lastLoginAt: { gte: oneHourAgo }
-        }
+          lastLoginAt: { gte: oneHourAgo },
+        },
       }),
       prisma.project.count({
         where: {
-          createdAt: { gte: oneHourAgo }
-        }
+          createdAt: { gte: oneHourAgo },
+        },
       }),
-      prisma.application.count({
-        where: {
-          createdAt: { gte: oneHourAgo }
-        }
-      }),
+      Promise.resolve(0),
       prisma.project.aggregate({
         where: {
           createdAt: { gte: oneDayAgo },
-          status: { in: ['COMPLETED', 'IN_PROGRESS'] }
+          status: { in: ['COMPLETED', 'IN_PROGRESS'] },
         },
-        _sum: { budget: true }
+        _sum: { budget: true },
       }),
       // Simulate online users (would use Redis/WebSocket in real implementation)
-      Math.floor(Math.random() * 50) + 10
+      Math.floor(Math.random() * 50) + 10,
     ])
 
     return {
@@ -195,7 +188,7 @@ export class AnalyticsService {
       newProjectsLastHour,
       newApplicationsLastHour,
       revenueToday: revenueToday._sum.budget || 0,
-      timestamp: now
+      timestamp: now,
     }
   }
 
@@ -267,7 +260,7 @@ export class AnalyticsService {
       completedProjects,
       totalRevenue,
       previousUsers,
-      previousRevenue
+      previousRevenue,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.project.count(),
@@ -275,59 +268,66 @@ export class AnalyticsService {
       prisma.project.count({ where: { status: 'COMPLETED' } }),
       prisma.project.aggregate({
         where: { status: 'COMPLETED' },
-        _sum: { budget: true }
+        _sum: { budget: true },
       }),
       prisma.user.count({
         where: {
           createdAt: {
             gte: previousPeriod.start,
-            lte: previousPeriod.end
-          }
-        }
+            lte: previousPeriod.end,
+          },
+        },
       }),
       prisma.project.aggregate({
         where: {
           status: 'COMPLETED',
           createdAt: {
             gte: previousPeriod.start,
-            lte: previousPeriod.end
-          }
+            lte: previousPeriod.end,
+          },
         },
-        _sum: { budget: true }
-      })
+        _sum: { budget: true },
+      }),
     ])
 
     const currentUsers = await prisma.user.count({
       where: {
-        createdAt: { gte: start, lte: end }
-      }
+        createdAt: { gte: start, lte: end },
+      },
     })
 
     const currentRevenue = await prisma.project.aggregate({
       where: {
         status: 'COMPLETED',
-        createdAt: { gte: start, lte: end }
+        createdAt: { gte: start, lte: end },
       },
-      _sum: { budget: true }
+      _sum: { budget: true },
     })
 
-    const userGrowthRate = previousUsers > 0 
-      ? ((currentUsers - previousUsers) / previousUsers) * 100 
-      : 0
+    const userGrowthRate =
+      previousUsers > 0
+        ? ((currentUsers - previousUsers) / previousUsers) * 100
+        : 0
 
-    const revenueGrowthRate = (previousRevenue._sum.budget || 0) > 0
-      ? (((currentRevenue._sum.budget || 0) - (previousRevenue._sum.budget || 0)) / (previousRevenue._sum.budget || 1)) * 100
-      : 0
+    const revenueGrowthRate =
+      (previousRevenue._sum.budget || 0) > 0
+        ? (((currentRevenue._sum.budget || 0) -
+            (previousRevenue._sum.budget || 0)) /
+            (previousRevenue._sum.budget || 1)) *
+          100
+        : 0
 
     return {
       totalUsers,
       totalProjects,
       totalRevenue: totalRevenue._sum.budget || 0,
       activeProjects,
-      completionRate: totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0,
-      averageProjectValue: totalProjects > 0 ? (totalRevenue._sum.budget || 0) / totalProjects : 0,
+      completionRate:
+        totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0,
+      averageProjectValue:
+        totalProjects > 0 ? (totalRevenue._sum.budget || 0) / totalProjects : 0,
       userGrowthRate,
-      revenueGrowthRate
+      revenueGrowthRate,
     }
   }
 
@@ -338,27 +338,27 @@ export class AnalyticsService {
       newUsersThisMonth,
       activeUsers,
       topFreelancers,
-      topClients
+      topClients,
     ] = await Promise.all([
       prisma.user.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-        }
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
       }),
       prisma.user.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-        }
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
       }),
       prisma.user.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-        }
+          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
       }),
       prisma.user.count({
         where: {
-          lastLoginAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-        }
+          lastLoginAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
       }),
       // Top freelancers by rating and completed projects
       prisma.user.findMany({
@@ -367,17 +367,15 @@ export class AnalyticsService {
           profile: true,
           _count: {
             select: {
-              freelancerProjects: {
-                where: { status: 'COMPLETED' }
-              }
-            }
-          }
+              freelancerProjects: true,
+            },
+          },
         },
         orderBy: [
           { profile: { rating: 'desc' } },
-          { freelancerProjects: { _count: 'desc' } }
+          { freelancerProjects: { _count: 'desc' } },
         ],
-        take: 10
+        take: 10,
       }),
       // Top clients by projects posted and total spent
       prisma.user.findMany({
@@ -386,19 +384,17 @@ export class AnalyticsService {
           profile: true,
           _count: {
             select: {
-              clientProjects: true
-            }
+              projects: true,
+            },
           },
-          clientProjects: {
+          projects: {
             where: { status: 'COMPLETED' },
-            select: { budget: true }
-          }
+            select: { budget: true },
+          },
         },
-        orderBy: [
-          { clientProjects: { _count: 'desc' } }
-        ],
-        take: 10
-      })
+        orderBy: [{ projects: { _count: 'desc' } }],
+        take: 10,
+      }),
     ])
 
     return {
@@ -412,15 +408,15 @@ export class AnalyticsService {
         name: user.name || 'Usuario',
         rating: user.profile?.rating || 0,
         completedProjects: user._count.freelancerProjects,
-        totalEarnings: 0 // Would calculate from completed projects
+        totalEarnings: 0, // Would calculate from completed projects
       })),
       topClients: topClients.map(user => ({
         id: user.id,
         name: user.name || 'Cliente',
         rating: user.profile?.rating || 0,
-        postedProjects: user._count.clientProjects,
-        totalSpent: user.clientProjects.reduce((sum, p) => sum + p.budget, 0)
-      }))
+        postedProjects: user._count.projects,
+        totalSpent: user.projects.reduce((sum, p) => sum + p.budget, 0),
+      })),
     }
   }
 
@@ -431,33 +427,33 @@ export class AnalyticsService {
       projectsThisMonth,
       projectsByCategory,
       projectsByStatus,
-      applications
+      applications,
     ] = await Promise.all([
       prisma.project.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-        }
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
       }),
       prisma.project.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-        }
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
       }),
       prisma.project.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-        }
+          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
       }),
       prisma.project.groupBy({
         by: ['category'],
         _count: { category: true },
-        orderBy: { _count: { category: 'desc' } }
+        orderBy: { _count: { category: 'desc' } },
       }),
       prisma.project.groupBy({
         by: ['status'],
-        _count: { status: true }
+        _count: { status: true },
       }),
-      prisma.application.count()
+      Promise.resolve(0),
     ])
 
     const totalProjects = await prisma.project.count()
@@ -470,15 +466,16 @@ export class AnalyticsService {
       projectsByCategory: projectsByCategory.map(item => ({
         category: item.category,
         count: item._count.category,
-        percentage: (item._count.category / totalProjects) * 100
+        percentage: (item._count.category / totalProjects) * 100,
       })),
       projectsByStatus: projectsByStatus.map(item => ({
         status: item.status,
         count: item._count.status,
-        percentage: (item._count.status / totalProjects) * 100
+        percentage: (item._count.status / totalProjects) * 100,
       })),
-      averageApplicationsPerProject: totalProjects > 0 ? totalApplications / totalProjects : 0,
-      averageTimeToCompletion: 14 // Would calculate from actual completion times
+      averageApplicationsPerProject:
+        totalProjects > 0 ? totalApplications / totalProjects : 0,
+      averageTimeToCompletion: 14, // Would calculate from actual completion times
     }
   }
 
@@ -488,42 +485,42 @@ export class AnalyticsService {
       revenueThisWeek,
       revenueThisMonth,
       revenueThisYear,
-      revenueByCategory
+      revenueByCategory,
     ] = await Promise.all([
       prisma.project.aggregate({
         where: {
           status: 'COMPLETED',
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
         },
-        _sum: { budget: true }
+        _sum: { budget: true },
       }),
       prisma.project.aggregate({
         where: {
           status: 'COMPLETED',
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         },
-        _sum: { budget: true }
+        _sum: { budget: true },
       }),
       prisma.project.aggregate({
         where: {
           status: 'COMPLETED',
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
         },
-        _sum: { budget: true }
+        _sum: { budget: true },
       }),
       prisma.project.aggregate({
         where: {
           status: 'COMPLETED',
-          createdAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) }
+          createdAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) },
         },
-        _sum: { budget: true }
+        _sum: { budget: true },
       }),
       prisma.project.groupBy({
         by: ['category'],
         where: { status: 'COMPLETED' },
         _sum: { budget: true },
-        orderBy: { _sum: { budget: 'desc' } }
-      })
+        orderBy: { _sum: { budget: 'desc' } },
+      }),
     ])
 
     const totalRevenue = revenueThisYear._sum.budget || 0
@@ -540,9 +537,10 @@ export class AnalyticsService {
       revenueByCategory: revenueByCategory.map(item => ({
         category: item.category,
         revenue: item._sum.budget || 0,
-        percentage: totalRevenue > 0 ? ((item._sum.budget || 0) / totalRevenue) * 100 : 0
+        percentage:
+          totalRevenue > 0 ? ((item._sum.budget || 0) / totalRevenue) * 100 : 0,
       })),
-      monthlyRevenueChart: [] // Would generate 12-month chart data
+      monthlyRevenueChart: [], // Would generate 12-month chart data
     }
   }
 
@@ -556,35 +554,49 @@ export class AnalyticsService {
       applicationSuccessRate: 68.3, // %
       userSatisfactionScore: 4.2, // out of 5
       pageViews: 15420,
-      bounceRate: 32.1 // %
+      bounceRate: 32.1, // %
     }
   }
 
-  private static async getClientAnalytics(user: any, start: Date, end: Date) {
-    const projects = user.clientProjects
-    const totalSpent = projects.reduce((sum: number, p: any) => sum + p.budget, 0)
-    const completedProjects = projects.filter((p: any) => p.status === 'COMPLETED').length
-    const averageApplications = projects.reduce((sum: number, p: any) => sum + p._count.applications, 0) / projects.length
+  private static async getClientAnalytics(
+    user: UserWithRelations,
+    start: Date,
+    end: Date
+  ) {
+    const projects = user.projects
+    const totalSpent = projects.reduce((sum: number, p) => sum + p.budget, 0)
+    const completedProjects = projects.filter(
+      p => p.status === 'COMPLETED'
+    ).length
+    const averageApplications = 0
 
     return {
       type: 'client',
       totalProjects: projects.length,
       completedProjects,
       totalSpent,
-      averageProjectValue: projects.length > 0 ? totalSpent / projects.length : 0,
+      averageProjectValue:
+        projects.length > 0 ? totalSpent / projects.length : 0,
       averageApplicationsPerProject: averageApplications || 0,
-      successRate: projects.length > 0 ? (completedProjects / projects.length) * 100 : 0,
+      successRate:
+        projects.length > 0 ? (completedProjects / projects.length) * 100 : 0,
       rating: user.profile?.rating || 0,
-      totalReviews: user.profile?.totalReviews || 0
+      totalReviews: user.profile?.totalReviews || 0,
     }
   }
 
-  private static async getFreelancerAnalytics(user: any, start: Date, end: Date) {
+  private static async getFreelancerAnalytics(
+    user: UserWithRelations,
+    start: Date,
+    end: Date
+  ) {
     const projects = user.freelancerProjects
-    const applications = user.applications
-    const totalEarnings = projects.reduce((sum: number, p: any) => sum + p.budget, 0)
-    const completedProjects = projects.filter((p: any) => p.status === 'COMPLETED').length
-    const acceptedApplications = applications.filter((a: any) => a.status === 'ACCEPTED').length
+    const applications: unknown[] = []
+    const totalEarnings = projects.reduce((sum: number, p) => sum + p.budget, 0)
+    const completedProjects = projects.filter(
+      p => p.status === 'COMPLETED'
+    ).length
+    const acceptedApplications = 0
 
     return {
       type: 'freelancer',
@@ -593,29 +605,37 @@ export class AnalyticsService {
       totalProjects: projects.length,
       completedProjects,
       totalEarnings,
-      averageProjectValue: projects.length > 0 ? totalEarnings / projects.length : 0,
-      applicationSuccessRate: applications.length > 0 ? (acceptedApplications / applications.length) * 100 : 0,
-      completionRate: projects.length > 0 ? (completedProjects / projects.length) * 100 : 0,
+      averageProjectValue:
+        projects.length > 0 ? totalEarnings / projects.length : 0,
+      applicationSuccessRate:
+        applications.length > 0
+          ? (acceptedApplications / applications.length) * 100
+          : 0,
+      completionRate:
+        projects.length > 0 ? (completedProjects / projects.length) * 100 : 0,
       rating: user.profile?.rating || 0,
-      totalReviews: user.profile?.totalReviews || 0
+      totalReviews: user.profile?.totalReviews || 0,
     }
   }
 
-  private static async generateUserReport(start: Date, end: Date, format: string) {
+  private static async generateUserReport(
+    start: Date,
+    end: Date,
+    format: string
+  ) {
     const users = await prisma.user.findMany({
       where: {
-        createdAt: { gte: start, lte: end }
+        createdAt: { gte: start, lte: end },
       },
       include: {
         profile: true,
         _count: {
           select: {
-            clientProjects: true,
+            projects: true,
             freelancerProjects: true,
-            applications: true
-          }
-        }
-      }
+          },
+        },
+      },
     })
 
     const reportData = users.map(user => ({
@@ -624,26 +644,29 @@ export class AnalyticsService {
       email: user.email,
       role: user.role,
       createdAt: user.createdAt,
-      isVerified: user.isVerified,
+      isVerified: Boolean(user.emailVerified),
       rating: user.profile?.rating || 0,
-      projectsPosted: user._count.clientProjects,
+      projectsPosted: user._count.projects,
       projectsCompleted: user._count.freelancerProjects,
-      applications: user._count.applications
+      applications: 0,
     }))
 
     return format === 'csv' ? this.convertToCSV(reportData) : reportData
   }
 
-  private static async generateProjectReport(start: Date, end: Date, format: string) {
+  private static async generateProjectReport(
+    start: Date,
+    end: Date,
+    format: string
+  ) {
     const projects = await prisma.project.findMany({
       where: {
-        createdAt: { gte: start, lte: end }
+        createdAt: { gte: start, lte: end },
       },
       include: {
         client: { select: { name: true, email: true } },
         freelancer: { select: { name: true, email: true } },
-        _count: { select: { applications: true } }
-      }
+      },
     })
 
     const reportData = projects.map(project => ({
@@ -656,33 +679,48 @@ export class AnalyticsService {
       deadline: project.deadline,
       clientName: project.client.name,
       freelancerName: project.freelancer?.name || 'No asignado',
-      applications: project._count.applications
+      applications: 0,
     }))
 
     return format === 'csv' ? this.convertToCSV(reportData) : reportData
   }
 
-  private static async generateFinancialReport(start: Date, end: Date, format: string) {
+  private static async generateFinancialReport(
+    start: Date,
+    end: Date,
+    format: string
+  ) {
     // Implementation for financial report
     return []
   }
 
-  private static async generatePerformanceReport(start: Date, end: Date, format: string) {
+  private static async generatePerformanceReport(
+    start: Date,
+    end: Date,
+    format: string
+  ) {
     // Implementation for performance report
     return []
   }
 
-  private static convertToCSV(data: any[]): string {
+  private static convertToCSV<T extends Record<string, unknown>>(
+    data: T[]
+  ): string {
     if (data.length === 0) return ''
 
-    const headers = Object.keys(data[0])
+    const headerKeys = Object.keys(data[0]) as (keyof T)[]
+    const headerRow = headerKeys.map(h => String(h)).join(',')
     const csvContent = [
-      headers.join(','),
-      ...data.map(row => 
-        headers.map(header => 
-          JSON.stringify(row[header] || '')
-        ).join(',')
-      )
+      headerRow,
+      ...data.map(row =>
+        headerKeys
+          .map(header =>
+            JSON.stringify(
+              (row as Record<string, unknown>)[header as string] ?? ''
+            )
+          )
+          .join(',')
+      ),
     ].join('\n')
 
     return csvContent

@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MobileAPIService } from '@/lib/mobile-api'
 import { CrossPlatformNotificationService } from '@/lib/cross-platform-notifications'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
     // Validar autenticación
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
-        MobileAPIService.createResponse(false, undefined, 'Authentication required'),
+        MobileAPIService.createResponse(
+          false,
+          undefined,
+          'Authentication required'
+        ),
         { status: 401 }
       )
     }
@@ -31,23 +35,25 @@ export async function GET(request: NextRequest) {
     const notifications = await prisma.notification.findMany({
       where: {
         userId: session.user.id,
-        ...(unreadOnly && { isRead: false })
+        ...(unreadOnly && { isRead: false }),
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     })
 
     // Obtener conteo total
     const totalCount = await prisma.notification.count({
       where: {
         userId: session.user.id,
-        ...(unreadOnly && { isRead: false })
-      }
+        ...(unreadOnly && { isRead: false }),
+      },
     })
 
     // Obtener conteo de no leídas
-    const unreadCount = await CrossPlatformNotificationService.getUnreadCount(session.user.id)
+    const unreadCount = await CrossPlatformNotificationService.getUnreadCount(
+      session.user.id
+    )
 
     const data = {
       notifications,
@@ -56,18 +62,27 @@ export async function GET(request: NextRequest) {
         limit,
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
-        hasMore: totalCount > page * limit
+        hasMore: totalCount > page * limit,
       },
-      unreadCount
+      unreadCount,
     }
 
     return NextResponse.json(
-      MobileAPIService.createResponse(true, data, undefined, 'Notifications retrieved successfully')
+      MobileAPIService.createResponse(
+        true,
+        data,
+        undefined,
+        'Notifications retrieved successfully'
+      )
     )
   } catch (error) {
     console.error('Mobile notifications GET error:', error)
     return NextResponse.json(
-      MobileAPIService.createResponse(false, undefined, 'Internal server error'),
+      MobileAPIService.createResponse(
+        false,
+        undefined,
+        'Internal server error'
+      ),
       { status: 500 }
     )
   }
@@ -76,10 +91,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Validar autenticación
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
-        MobileAPIService.createResponse(false, undefined, 'Authentication required'),
+        MobileAPIService.createResponse(
+          false,
+          undefined,
+          'Authentication required'
+        ),
         { status: 401 }
       )
     }
@@ -94,18 +113,18 @@ export async function POST(request: NextRequest) {
           await prisma.notification.update({
             where: {
               id: notificationId,
-              userId: session.user.id
+              userId: session.user.id,
             },
-            data: { isRead: true }
+            data: { isRead: true },
           })
         } else if (notificationIds && Array.isArray(notificationIds)) {
           // Marcar múltiples notificaciones como leídas
           await prisma.notification.updateMany({
             where: {
               id: { in: notificationIds },
-              userId: session.user.id
+              userId: session.user.id,
             },
-            data: { isRead: true }
+            data: { isRead: true },
           })
         }
         break
@@ -115,9 +134,9 @@ export async function POST(request: NextRequest) {
         await prisma.notification.updateMany({
           where: {
             userId: session.user.id,
-            isRead: false
+            isRead: false,
           },
-          data: { isRead: true }
+          data: { isRead: true },
         })
         break
 
@@ -139,12 +158,21 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      MobileAPIService.createResponse(true, undefined, undefined, 'Action completed successfully')
+      MobileAPIService.createResponse(
+        true,
+        undefined,
+        undefined,
+        'Action completed successfully'
+      )
     )
   } catch (error) {
     console.error('Mobile notifications POST error:', error)
     return NextResponse.json(
-      MobileAPIService.createResponse(false, undefined, 'Internal server error'),
+      MobileAPIService.createResponse(
+        false,
+        undefined,
+        'Internal server error'
+      ),
       { status: 500 }
     )
   }

@@ -1,7 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import {
+  ProjectStatus,
+  TransactionStatus,
+  TransactionType,
+} from '@prisma/client'
 
-export interface MobileAPIResponse<T = any> {
+export interface MobileAPIResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -13,20 +18,28 @@ export interface MobileAPIResponse<T = any> {
 export interface MobileSyncData {
   users: {
     lastSync: string
-    data: any[]
+    data: unknown[]
   }
   projects: {
     lastSync: string
-    data: any[]
+    data: unknown[]
   }
   messages: {
     lastSync: string
-    data: any[]
+    data: unknown[]
   }
   notifications: {
     lastSync: string
-    data: any[]
+    data: unknown[]
   }
+}
+
+type MobileAchievement = {
+  id: string
+  title: string
+  description: string
+  icon: string
+  unlockedAt: string
 }
 
 export interface DeviceInfo {
@@ -34,7 +47,7 @@ export interface DeviceInfo {
   platform: 'ios' | 'android' | 'web'
   version: string
   pushToken?: string
-  lastActive: Date
+  lastSeen: Date
 }
 
 export class MobileAPIService {
@@ -53,7 +66,7 @@ export class MobileAPIService {
       error,
       message,
       timestamp: new Date().toISOString(),
-      version: this.API_VERSION
+      version: this.API_VERSION,
     }
   }
 
@@ -62,29 +75,32 @@ export class MobileAPIService {
     try {
       const device = await prisma.device.upsert({
         where: {
-          userId_deviceId: {
-            userId,
-            deviceId: deviceInfo.deviceId
-          }
+          deviceId: deviceInfo.deviceId,
         },
         update: {
           platform: deviceInfo.platform,
-          version: deviceInfo.version,
-          pushToken: deviceInfo.pushToken,
-          lastActive: deviceInfo.lastActive,
-          updatedAt: new Date()
+          isRegistered: true,
+          lastSeen: new Date(),
         },
         create: {
           userId,
           deviceId: deviceInfo.deviceId,
+          deviceName: `${deviceInfo.platform} device`,
+          deviceType: 'mobile',
           platform: deviceInfo.platform,
-          version: deviceInfo.version,
-          pushToken: deviceInfo.pushToken,
-          lastActive: deviceInfo.lastActive
-        }
+          fingerprint: deviceInfo.deviceId,
+          isRegistered: true,
+          isTrusted: false,
+          lastSeen: new Date(),
+        },
       })
 
-      return this.createResponse(true, device, undefined, 'Device registered successfully')
+      return this.createResponse(
+        true,
+        device,
+        undefined,
+        'Device registered successfully'
+      )
     } catch (error) {
       console.error('Error registering device:', error)
       return this.createResponse(false, undefined, 'Failed to register device')
@@ -92,33 +108,37 @@ export class MobileAPIService {
   }
 
   // Sincronización incremental de datos
-  static async syncData(userId: string, lastSyncTimestamp?: string): Promise<MobileAPIResponse<MobileSyncData>> {
+  static async syncData(
+    userId: string,
+    lastSyncTimestamp?: string
+  ): Promise<MobileAPIResponse<MobileSyncData>> {
     try {
-      const lastSync = lastSyncTimestamp ? new Date(lastSyncTimestamp) : new Date(0)
+      const lastSync = lastSyncTimestamp
+        ? new Date(lastSyncTimestamp)
+        : new Date(0)
 
       // Sincronizar usuarios (perfil y contactos)
       const userData = await prisma.user.findMany({
         where: {
           OR: [
             { id: userId },
-            { 
+            {
               updatedAt: { gt: lastSync },
-              // Solo usuarios públicos o con los que ha interactuado
+              // Usuarios con los que ha interactuado
               OR: [
-                { profile: { isPublic: true } },
                 {
                   sentMessages: {
-                    some: { receiverId: userId }
-                  }
+                    some: { receiverId: userId },
+                  },
                 },
                 {
                   receivedMessages: {
-                    some: { senderId: userId }
-                  }
-                }
-              ]
-            }
-          ]
+                    some: { senderId: userId },
+                  },
+                },
+              ],
+            },
+          ],
         },
         include: {
           profile: true,
@@ -126,11 +146,11 @@ export class MobileAPIService {
             select: {
               projects: true,
               sentMessages: true,
-              receivedMessages: true
-            }
-          }
+              receivedMessages: true,
+            },
+          },
         },
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
       })
 
       // Sincronizar proyectos
@@ -139,92 +159,100 @@ export class MobileAPIService {
           OR: [
             { clientId: userId },
             { freelancerId: userId },
-            { 
+            {
               updatedAt: { gt: lastSync },
-              status: 'ACTIVE'
-            }
-          ]
+              status: ProjectStatus.ACTIVE,
+            },
+          ],
         },
         include: {
           client: {
-            select: { id: true, name: true, email: true, profile: true }
+            select: { id: true, name: true, email: true, profile: true },
           },
           freelancer: {
-            select: { id: true, name: true, email: true, profile: true }
+            select: { id: true, name: true, email: true, profile: true },
           },
           _count: {
             select: {
               messages: true,
-              payments: true
-            }
-          }
+              transactions: true,
+            },
+          },
         },
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
       })
 
       // Sincronizar mensajes
       const messagesData = await prisma.message.findMany({
         where: {
-          OR: [
-            { senderId: userId },
-            { receiverId: userId }
-          ],
-          updatedAt: { gt: lastSync }
+          OR: [{ senderId: userId }, { receiverId: userId }],
+          updatedAt: { gt: lastSync },
         },
         include: {
           sender: {
-            select: { id: true, name: true, profile: { select: { avatar: true } } }
+            select: { id: true, name: true, image: true },
           },
           receiver: {
-            select: { id: true, name: true, profile: { select: { avatar: true } } }
-          }
+            select: { id: true, name: true, image: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
-        take: 100 // Limitar mensajes recientes
+        take: 100, // Limitar mensajes recientes
       })
 
       // Sincronizar notificaciones
       const notificationsData = await prisma.notification.findMany({
         where: {
           userId,
-          updatedAt: { gt: lastSync }
+          updatedAt: { gt: lastSync },
         },
         orderBy: { createdAt: 'desc' },
-        take: 50 // Limitar notificaciones recientes
+        take: 50, // Limitar notificaciones recientes
       })
 
       const syncData: MobileSyncData = {
         users: {
           lastSync: new Date().toISOString(),
-          data: userData
+          data: userData,
         },
         projects: {
           lastSync: new Date().toISOString(),
-          data: projectsData
+          data: projectsData,
         },
         messages: {
           lastSync: new Date().toISOString(),
-          data: messagesData
+          data: messagesData,
         },
         notifications: {
           lastSync: new Date().toISOString(),
-          data: notificationsData
-        }
+          data: notificationsData,
+        },
       }
 
-      return this.createResponse(true, syncData, undefined, 'Data synchronized successfully')
+      return this.createResponse<MobileSyncData>(
+        true,
+        syncData,
+        undefined,
+        'Data synchronized successfully'
+      )
     } catch (error) {
       console.error('Error syncing data:', error)
-      return this.createResponse(false, undefined, 'Failed to sync data')
+      return this.createResponse<MobileSyncData>(
+        false,
+        undefined,
+        'Failed to sync data'
+      )
     }
   }
 
   // Obtener métricas unificadas para dashboard móvil
-  static async getDashboardMetrics(userId: string): Promise<MobileAPIResponse<any>> {
+  static async getDashboardMetrics(
+    userId: string
+  ): Promise<MobileAPIResponse<unknown>> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { profile: true }
+        include: { profile: true },
       })
 
       if (!user) {
@@ -235,46 +263,38 @@ export class MobileAPIService {
       const projectMetrics = await prisma.project.groupBy({
         by: ['status'],
         where: {
-          OR: [
-            { clientId: userId },
-            { freelancerId: userId }
-          ]
+          OR: [{ clientId: userId }, { freelancerId: userId }],
         },
-        _count: true
+        _count: true,
       })
 
       // Métricas financieras
-      const financialMetrics = await prisma.payment.aggregate({
+      const financialMetrics = await prisma.transaction.aggregate({
         where: {
-          OR: [
-            { project: { clientId: userId } },
-            { project: { freelancerId: userId } }
-          ],
-          status: 'COMPLETED'
+          userId,
+          status: TransactionStatus.COMPLETED,
+          type: TransactionType.PAYMENT,
         },
         _sum: { amount: true },
-        _count: true
+        _count: true,
       })
 
       // Métricas de actividad
       const activityMetrics = {
         messagesCount: await prisma.message.count({
           where: {
-            OR: [
-              { senderId: userId },
-              { receiverId: userId }
-            ],
+            OR: [{ senderId: userId }, { receiverId: userId }],
             createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Últimos 30 días
-            }
-          }
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Últimos 30 días
+            },
+          },
         }),
         notificationsCount: await prisma.notification.count({
           where: {
             userId,
-            isRead: false
-          }
-        })
+            isRead: false,
+          },
+        }),
       }
 
       // Métricas de gamificación
@@ -282,7 +302,7 @@ export class MobileAPIService {
         xp: user.profile?.xp || 0,
         level: user.profile?.level || 1,
         rank: await this.getUserRank(userId),
-        achievements: await this.getUserAchievements(userId)
+        achievements: await this.getUserAchievements(userId),
       }
 
       const metrics = {
@@ -291,22 +311,31 @@ export class MobileAPIService {
           name: user.name,
           email: user.email,
           role: user.role,
-          profile: user.profile
+          profile: user.profile,
         },
         projects: projectMetrics,
         financial: {
           totalEarnings: financialMetrics._sum.amount || 0,
-          completedPayments: financialMetrics._count || 0
+          completedPayments: financialMetrics._count || 0,
         },
         activity: activityMetrics,
         gamification: gamificationMetrics,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       }
 
-      return this.createResponse(true, metrics, undefined, 'Dashboard metrics retrieved successfully')
+      return this.createResponse(
+        true,
+        metrics,
+        undefined,
+        'Dashboard metrics retrieved successfully'
+      )
     } catch (error) {
       console.error('Error getting dashboard metrics:', error)
-      return this.createResponse(false, undefined, 'Failed to get dashboard metrics')
+      return this.createResponse(
+        false,
+        undefined,
+        'Failed to get dashboard metrics'
+      )
     }
   }
 
@@ -315,15 +344,15 @@ export class MobileAPIService {
     try {
       const userProfile = await prisma.profile.findUnique({
         where: { userId },
-        select: { xp: true }
+        select: { xp: true },
       })
 
       if (!userProfile) return 0
 
       const rank = await prisma.profile.count({
         where: {
-          xp: { gt: userProfile.xp }
-        }
+          xp: { gt: userProfile.xp },
+        },
       })
 
       return rank + 1
@@ -334,7 +363,9 @@ export class MobileAPIService {
   }
 
   // Obtener logros del usuario
-  private static async getUserAchievements(userId: string): Promise<any[]> {
+  private static async getUserAchievements(
+    userId: string
+  ): Promise<MobileAchievement[]> {
     try {
       // En una implementación real, esto vendría de una tabla de achievements
       // Por ahora, devolvemos logros mock basados en datos del usuario
@@ -342,8 +373,8 @@ export class MobileAPIService {
         where: { id: userId },
         include: {
           profile: true,
-          projects: { where: { status: 'COMPLETED' } }
-        }
+          projects: { where: { status: ProjectStatus.COMPLETED } },
+        },
       })
 
       if (!user) return []
@@ -358,7 +389,7 @@ export class MobileAPIService {
           title: 'Primer Proyecto',
           description: 'Completa tu primer proyecto',
           icon: '🚀',
-          unlockedAt: new Date().toISOString()
+          unlockedAt: new Date().toISOString(),
         })
       }
 
@@ -368,7 +399,7 @@ export class MobileAPIService {
           title: 'Primeros Pasos',
           description: 'Alcanza 100 XP',
           icon: '⭐',
-          unlockedAt: new Date().toISOString()
+          unlockedAt: new Date().toISOString(),
         })
       }
 
@@ -378,7 +409,7 @@ export class MobileAPIService {
           title: 'Experimentado',
           description: 'Completa 5 proyectos',
           icon: '💎',
-          unlockedAt: new Date().toISOString()
+          unlockedAt: new Date().toISOString(),
         })
       }
 
@@ -390,11 +421,13 @@ export class MobileAPIService {
   }
 
   // Validar token de autenticación móvil
-  static async validateMobileToken(request: NextRequest): Promise<{ valid: boolean; userId?: string; error?: string }> {
+  static async validateMobileToken(
+    request: NextRequest
+  ): Promise<{ valid: boolean; userId?: string; error?: string }> {
     try {
       const authHeader = request.headers.get('authorization')
       const mobileToken = request.headers.get('x-mobile-token')
-      
+
       if (!authHeader && !mobileToken) {
         return { valid: false, error: 'No authentication token provided' }
       }
@@ -422,11 +455,11 @@ export class MobileAPIService {
       await prisma.device.updateMany({
         where: {
           userId,
-          deviceId
+          deviceId,
         },
         data: {
-          lastActive: new Date()
-        }
+          lastSeen: new Date(),
+        },
       })
     } catch (error) {
       console.error('Error updating device activity:', error)

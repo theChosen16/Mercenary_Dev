@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { AdvancedGamificationService } from '@/lib/gamification-advanced'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const streak = await AdvancedGamificationService.updateJobCompletionStreak(session.user.id)
-    
+    const streak = await AdvancedGamificationService.updateJobCompletionStreak(
+      session.user.id
+    )
+
     return NextResponse.json(streak)
   } catch (error) {
     console.error('Error getting streak:', error)
@@ -24,17 +25,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
     // Update streak when a job is completed
-    const streak = await AdvancedGamificationService.updateJobCompletionStreak(session.user.id)
-    
-    return NextResponse.json({ 
+    const streak = await AdvancedGamificationService.updateJobCompletionStreak(
+      session.user.id
+    )
+
+    return NextResponse.json({
       message: 'Racha actualizada',
-      streak 
+      streak,
     })
   } catch (error) {
     console.error('Error updating streak:', error)

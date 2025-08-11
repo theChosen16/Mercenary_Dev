@@ -5,6 +5,12 @@
 
 import { prisma } from '../prisma'
 import * as crypto from 'crypto'
+import type {
+  AuditLogSeverity,
+  AuditLogStatus,
+  SecurityAlertType,
+  SecuritySeverity,
+} from '@prisma/client'
 
 // Type definitions that match the Prisma schema
 export interface AuditEvent {
@@ -15,8 +21,8 @@ export interface AuditEvent {
   details: string | null
   ipAddress: string
   userAgent: string
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-  status: 'SUCCESS' | 'FAILURE' | 'WARNING'
+  severity: AuditLogSeverity
+  status: AuditLogStatus
   createdAt: Date
 }
 
@@ -26,7 +32,7 @@ export interface SecurityAlert {
   alertType: string
   title: string
   description: string
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  severity: SecuritySeverity
   isResolved: boolean
   resolvedAt: Date | null
   resolvedBy: string | null
@@ -51,7 +57,7 @@ export class AuditLogger {
     RAPID_LOGIN_ATTEMPTS: { count: 10, timeWindow: 5 * 60 * 1000 }, // 10 attempts in 5 minutes
     MULTIPLE_IP_ADDRESSES: { count: 3, timeWindow: 60 * 60 * 1000 }, // 3 IPs in 1 hour
     UNUSUAL_ACTIVITY_HOURS: { startHour: 2, endHour: 6 }, // 2 AM - 6 AM
-    BULK_DATA_ACCESS: { count: 100, timeWindow: 10 * 60 * 1000 } // 100 records in 10 minutes
+    BULK_DATA_ACCESS: { count: 100, timeWindow: 10 * 60 * 1000 }, // 100 records in 10 minutes
   }
 
   /**
@@ -82,26 +88,26 @@ export class AuditLogger {
           eventType,
           oldValue,
           newValue,
-          metadata
+          metadata,
         }),
         ipAddress: ipAddress,
         userAgent: userAgent,
-        severity: severity as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
-        createdAt: new Date()
-      }
+        severity: severity,
+        createdAt: new Date(),
+      },
     })
 
     // Check for suspicious activity patterns
-    await this.detectSuspiciousActivity(userId, eventType, ipAddress, metadata)
+    await this._detectSuspiciousActivityForEvent(userId, eventType, ipAddress)
 
     // Generate security alert for critical events
     if (severity === 'CRITICAL' || severity === 'HIGH') {
-      await this.generateSecurityAlert(
-        userId,
-        eventType,
-        severity,
-        { ...metadata, eventId, action, resource }
-      )
+      await this.generateSecurityAlert(userId, eventType, severity, {
+        ...metadata,
+        eventId,
+        action,
+        resource,
+      })
     }
   }
 
@@ -122,7 +128,7 @@ export class AuditLogger {
       email,
       success,
       failureReason: failureReason || null,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
 
     await this.logSecurityEvent(
@@ -156,7 +162,7 @@ export class AuditLogger {
     const metadata = {
       recordId,
       sensitive,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
 
     await this.logSecurityEvent(
@@ -208,7 +214,7 @@ export class AuditLogger {
         adminAction: true,
         timestamp: new Date().toISOString(),
         oldValue: oldValue,
-        newValue: newValue
+        newValue: newValue,
       }
     )
   }
@@ -218,25 +224,30 @@ export class AuditLogger {
    */
   static async queryAuditLogs(query: AuditQuery): Promise<AuditEvent[]> {
     const whereClause: Record<string, unknown> = {}
-    
+
     if (query.userId) whereClause.userId = query.userId
     if (query.eventType) whereClause.action = { contains: query.eventType }
     if (query.resource) whereClause.resource = query.resource
-    if (query.severity) whereClause.severity = query.severity
+    if (query.severity)
+      whereClause.severity = query.severity as unknown as AuditLogSeverity
     if (query.startDate || query.endDate) {
       whereClause.createdAt = {} as { gte?: Date; lte?: Date }
-      if (query.startDate) (whereClause.createdAt as { gte?: Date; lte?: Date }).gte = query.startDate
-      if (query.endDate) (whereClause.createdAt as { gte?: Date; lte?: Date }).lte = query.endDate
+      if (query.startDate)
+        (whereClause.createdAt as { gte?: Date; lte?: Date }).gte =
+          query.startDate
+      if (query.endDate)
+        (whereClause.createdAt as { gte?: Date; lte?: Date }).lte =
+          query.endDate
     }
-    
+
     const logs = await prisma.auditLog.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: query.limit || 100,
-      skip: query.offset || 0
+      skip: query.offset || 0,
     })
-    
-    return logs.map((log: any) => {
+
+    return logs.map(log => {
       return {
         id: log.id,
         userId: log.userId,
@@ -247,7 +258,7 @@ export class AuditLogger {
         userAgent: log.userAgent,
         severity: log.severity,
         status: log.status,
-        createdAt: log.createdAt
+        createdAt: log.createdAt,
       } as AuditEvent
     })
   }
@@ -255,43 +266,52 @@ export class AuditLogger {
   /**
    * Get security alerts for a user
    */
-  static async getSecurityAlerts(userId: string, onlyUnresolved: boolean = true): Promise<SecurityAlert[]> {
+  static async getSecurityAlerts(
+    userId: string,
+    onlyUnresolved: boolean = true
+  ): Promise<SecurityAlert[]> {
     const whereClause: { userId: string; isResolved?: boolean } = { userId }
     if (onlyUnresolved) {
       whereClause.isResolved = false
     }
-    
+
     const alerts = await prisma.securityAlert.findMany({
       where: whereClause,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     })
-    
-    return alerts.map((alert: any) => ({
-      id: alert.id,
-      userId: alert.userId,
-      alertType: alert.alertType,
-      title: alert.title,
-      description: alert.description,
-      severity: alert.severity,
-      isResolved: alert.isResolved,
-      resolvedAt: alert.resolvedAt,
-      resolvedBy: alert.resolvedBy,
-      createdAt: alert.createdAt
-    } as SecurityAlert))
+
+    return alerts.map(
+      alert =>
+        ({
+          id: alert.id,
+          userId: alert.userId,
+          alertType: alert.alertType,
+          title: alert.title,
+          description: alert.description,
+          severity: alert.severity,
+          isResolved: alert.isResolved,
+          resolvedAt: alert.resolvedAt,
+          resolvedBy: alert.resolvedBy,
+          createdAt: alert.createdAt,
+        }) as SecurityAlert
+    )
   }
 
   /**
    * Resolve security alert
    */
-  static async resolveSecurityAlert(alertId: string, resolvedBy: string): Promise<boolean> {
+  static async resolveSecurityAlert(
+    alertId: string,
+    resolvedBy: string
+  ): Promise<boolean> {
     try {
       await prisma.securityAlert.update({
         where: { id: alertId },
         data: {
           isResolved: true,
           resolvedAt: new Date(),
-          resolvedBy
-        }
+          resolvedBy,
+        },
       })
       return true
     } catch (error) {
@@ -316,31 +336,41 @@ export class AuditLogger {
     alerts: SecurityAlert[]
   }> {
     const whereClause: Record<string, unknown> = {
-      createdAt: { gte: startDate, lte: endDate }
+      createdAt: { gte: startDate, lte: endDate },
     }
     if (userId) whereClause.userId = userId
-    
+
     // Get total events
     const totalEvents = await prisma.auditLog.count({ where: whereClause })
-    
+
     // Get events by action
     const eventsByActionRaw = await prisma.auditLog.groupBy({
       by: ['action'],
       where: whereClause,
-      _count: { action: true }
+      _count: { action: true },
     })
     const eventsByType = Object.fromEntries(
-      eventsByActionRaw.map((item: { action: string; _count: { action: number } }) => [item.action, item._count.action])
+      eventsByActionRaw.map(
+        (item: { action: string; _count: { action: number } }) => [
+          item.action,
+          item._count.action,
+        ]
+      )
     )
 
     // Get events by severity
     const eventsBySeverityRaw = await prisma.auditLog.groupBy({
       by: ['severity'],
       where: whereClause,
-      _count: { severity: true }
+      _count: { severity: true },
     })
     const eventsBySeverity = Object.fromEntries(
-      eventsBySeverityRaw.map((item: { severity: string; _count: { severity: number } }) => [item.severity, item._count.severity])
+      eventsBySeverityRaw.map(
+        (item: {
+          severity: AuditLogSeverity
+          _count: { severity: number }
+        }) => [item.severity, item._count.severity]
+      )
     )
 
     // Get top users
@@ -349,12 +379,17 @@ export class AuditLogger {
       where: whereClause,
       _count: { userId: true },
       orderBy: { _count: { userId: 'desc' } },
-      take: 10
+      take: 10,
     })
-    const topUsers = topUsersRaw.map((item: { userId: string; _count: { userId: number } }) => ({
-      userId: item.userId,
-      eventCount: item._count.userId
-    }))
+    const topUsers = topUsersRaw
+      .filter(
+        (item): item is { userId: string; _count: { userId: number } } =>
+          item.userId !== null
+      )
+      .map(item => ({
+        userId: item.userId,
+        eventCount: item._count.userId,
+      }))
 
     // Get top IP addresses
     const topIpAddressesRaw = await prisma.auditLog.groupBy({
@@ -362,12 +397,14 @@ export class AuditLogger {
       where: whereClause,
       _count: { ipAddress: true },
       orderBy: { _count: { ipAddress: 'desc' } },
-      take: 10
+      take: 10,
     })
-    const topIpAddresses = topIpAddressesRaw.map((item: { ipAddress: string; _count: { ipAddress: number } }) => ({
-      ipAddress: item.ipAddress,
-      eventCount: item._count.ipAddress
-    }))
+    const topIpAddresses = topIpAddressesRaw.map(
+      (item: { ipAddress: string; _count: { ipAddress: number } }) => ({
+        ipAddress: item.ipAddress,
+        eventCount: item._count.ipAddress,
+      })
+    )
 
     // Get alerts in the same period
     const alerts = await this.getSecurityAlerts(userId || '')
@@ -378,8 +415,130 @@ export class AuditLogger {
       eventsBySeverity,
       topUsers,
       topIpAddresses,
-      alerts
+      alerts,
     }
+  }
+
+  /**
+   * Backwards-compatible alias used by tests
+   * Accepts a single event object and maps to logSecurityEvent
+   */
+  static async logEvent(event: {
+    userId: string
+    action: string
+    resource: string
+    ipAddress: string
+    userAgent: string
+    severity?: string
+    eventType?: string
+    metadata?: Record<string, unknown>
+  }): Promise<void> {
+    const {
+      userId,
+      action,
+      resource,
+      ipAddress,
+      userAgent,
+      eventType,
+      metadata,
+    } = event
+
+    // Deduce event type when not provided
+    const derivedType =
+      eventType ??
+      (action.includes('LOGIN')
+        ? 'AUTH_ATTEMPT'
+        : resource === 'authentication'
+          ? 'AUTH_ATTEMPT'
+          : 'CUSTOM')
+
+    await this.logSecurityEvent(
+      userId,
+      derivedType,
+      resource,
+      action,
+      ipAddress,
+      userAgent,
+      { ...(metadata || {}), severityHint: event.severity }
+    )
+  }
+
+  /**
+   * Public suspicious activity detector expected by tests
+   * Returns whether user shows suspicious patterns in recent activity
+   */
+  static async detectSuspiciousActivity(
+    userId: string
+  ): Promise<{ isSuspicious: boolean; patterns: string[] }> {
+    const patterns: string[] = []
+
+    // Multiple failed logins within lockout duration
+    const failedCount = await prisma.auditLog.count({
+      where: {
+        userId,
+        action: 'AUTH_ATTEMPT:LOGIN_FAILED',
+        createdAt: { gte: new Date(Date.now() - this.LOCKOUT_DURATION) },
+      },
+    })
+    if (failedCount >= this.MAX_FAILED_ATTEMPTS) {
+      patterns.push('multiple_failed_logins')
+    }
+
+    // Rapid login attempts within 5 minutes
+    const rapidAttempts = await prisma.auditLog.count({
+      where: {
+        userId,
+        action: { contains: 'AUTH_ATTEMPT' },
+        createdAt: {
+          gte: new Date(
+            Date.now() -
+              this.SUSPICIOUS_PATTERNS.RAPID_LOGIN_ATTEMPTS.timeWindow
+          ),
+        },
+      },
+    })
+    if (rapidAttempts >= this.SUSPICIOUS_PATTERNS.RAPID_LOGIN_ATTEMPTS.count) {
+      patterns.push('rapid_login_attempts')
+    }
+
+    // Multiple IP addresses in recent activity
+    const recentIps = await prisma.auditLog.findMany({
+      where: {
+        userId,
+        createdAt: {
+          gte: new Date(
+            Date.now() -
+              this.SUSPICIOUS_PATTERNS.MULTIPLE_IP_ADDRESSES.timeWindow
+          ),
+        },
+      },
+      select: { ipAddress: true },
+      distinct: ['ipAddress'],
+    })
+    if (
+      recentIps.length >= this.SUSPICIOUS_PATTERNS.MULTIPLE_IP_ADDRESSES.count
+    ) {
+      patterns.push('multiple_ip_addresses')
+    }
+
+    // Unusual activity hours (2 AM - 6 AM)
+    const hour = new Date().getHours()
+    if (
+      hour >= this.SUSPICIOUS_PATTERNS.UNUSUAL_ACTIVITY_HOURS.startHour &&
+      hour <= this.SUSPICIOUS_PATTERNS.UNUSUAL_ACTIVITY_HOURS.endHour
+    ) {
+      const recentActivity = await prisma.auditLog.count({
+        where: {
+          userId,
+          createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+        },
+      })
+      if (recentActivity > 0) {
+        patterns.push('unusual_activity_hours')
+      }
+    }
+
+    return { isSuspicious: patterns.length > 0, patterns }
   }
 
   /**
@@ -389,12 +548,15 @@ export class AuditLogger {
     eventType: string,
     action: string,
     metadata?: Record<string, unknown>
-  ): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+  ): AuditLogSeverity {
     // Critical events
-    if (eventType === 'SECURITY_BREACH' || eventType === 'UNAUTHORIZED_ACCESS') {
+    if (
+      eventType === 'SECURITY_BREACH' ||
+      eventType === 'UNAUTHORIZED_ACCESS'
+    ) {
       return 'CRITICAL'
     }
-    
+
     // High severity events
     if (eventType === 'AUTH_ATTEMPT' && action === 'LOGIN_FAILED') {
       return 'HIGH'
@@ -402,38 +564,75 @@ export class AuditLogger {
     if (eventType === 'ADMIN_ACTION' || eventType === 'PRIVILEGE_ESCALATION') {
       return 'HIGH'
     }
-    
+
     // Medium severity events
     if (eventType === 'DATA_ACCESS' && metadata?.sensitive) {
       return 'MEDIUM'
     }
-    if (eventType === 'PERMISSION_CHANGE' || eventType === 'ACCOUNT_MODIFICATION') {
+    if (
+      eventType === 'PERMISSION_CHANGE' ||
+      eventType === 'ACCOUNT_MODIFICATION'
+    ) {
       return 'MEDIUM'
     }
-    
+
     // Default to low
     return 'LOW'
   }
 
-  private static async detectSuspiciousActivity(
+  private static mapAlertType(input: string): SecurityAlertType {
+    const map: Record<string, SecurityAlertType> = {
+      RAPID_LOGIN_ATTEMPTS: 'MULTIPLE_FAILED_ATTEMPTS',
+      ACCOUNT_LOCKED: 'UNUSUAL_ACTIVITY',
+      UNAUTHORIZED_ACCESS: 'ACCOUNT_COMPROMISE',
+      SUSPICIOUS_DATA_ACCESS: 'UNUSUAL_ACTIVITY',
+      PRIVILEGE_ESCALATION: 'UNUSUAL_ACTIVITY',
+    }
+    const allowed: SecurityAlertType[] = [
+      'BRUTE_FORCE',
+      'SUSPICIOUS_LOGIN',
+      'MULTIPLE_FAILED_ATTEMPTS',
+      'UNUSUAL_ACTIVITY',
+      'ACCOUNT_COMPROMISE',
+      'DATA_BREACH',
+    ]
+    const candidate = map[input] ?? (input as SecurityAlertType)
+    return allowed.includes(candidate) ? candidate : 'UNUSUAL_ACTIVITY'
+  }
+
+  private static mapSecuritySeverity(
+    input: string | SecuritySeverity
+  ): SecuritySeverity {
+    const allowed: SecuritySeverity[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+    return allowed.includes(input as SecuritySeverity)
+      ? (input as SecuritySeverity)
+      : 'MEDIUM'
+  }
+
+  private static async _detectSuspiciousActivityForEvent(
     userId: string,
     eventType: string,
-    ipAddress: string,
-    _metadata?: Record<string, unknown>
+    ipAddress: string
   ): Promise<void> {
     const now = Date.now()
-    
+
     // Check for rapid login attempts
     if (eventType === 'AUTH_ATTEMPT') {
       const recentAttempts = await prisma.auditLog.count({
         where: {
           userId,
           action: { contains: 'AUTH_ATTEMPT' },
-          createdAt: { gte: new Date(now - this.SUSPICIOUS_PATTERNS.RAPID_LOGIN_ATTEMPTS.timeWindow) }
-        }
+          createdAt: {
+            gte: new Date(
+              now - this.SUSPICIOUS_PATTERNS.RAPID_LOGIN_ATTEMPTS.timeWindow
+            ),
+          },
+        },
       })
-      
-      if (recentAttempts >= this.SUSPICIOUS_PATTERNS.RAPID_LOGIN_ATTEMPTS.count) {
+
+      if (
+        recentAttempts >= this.SUSPICIOUS_PATTERNS.RAPID_LOGIN_ATTEMPTS.count
+      ) {
         await this.generateSecurityAlert(
           userId,
           'RAPID_LOGIN_ATTEMPTS',
@@ -444,22 +643,23 @@ export class AuditLogger {
     }
   }
 
-  private static async handleFailedLogin(userId: string, ipAddress: string): Promise<void> {
+  private static async handleFailedLogin(
+    userId: string,
+    ipAddress: string
+  ): Promise<void> {
     const recentFailures = await prisma.auditLog.count({
       where: {
         userId,
         action: 'AUTH_ATTEMPT:LOGIN_FAILED',
-        createdAt: { gte: new Date(Date.now() - this.LOCKOUT_DURATION) }
-      }
+        createdAt: { gte: new Date(Date.now() - this.LOCKOUT_DURATION) },
+      },
     })
-    
+
     if (recentFailures >= this.MAX_FAILED_ATTEMPTS) {
-      await this.generateSecurityAlert(
-        userId,
-        'ACCOUNT_LOCKED',
-        'HIGH',
-        { reason: 'Too many failed login attempts', ipAddress }
-      )
+      await this.generateSecurityAlert(userId, 'ACCOUNT_LOCKED', 'HIGH', {
+        reason: 'Too many failed login attempts',
+        ipAddress,
+      })
     }
   }
 
@@ -469,23 +669,28 @@ export class AuditLogger {
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
     metadata?: Record<string, unknown>
   ): Promise<void> {
+    const mappedType = this.mapAlertType(alertType)
+    const severityEnum = this.mapSecuritySeverity(severity)
     const description = this.generateAlertDescription(alertType, metadata)
-    
+
     await prisma.securityAlert.create({
       data: {
         id: crypto.randomUUID(),
         userId: userId,
-        alertType: alertType as any, // Cast to SecurityAlertType enum
-        title: `Security Alert: ${alertType}`,
+        alertType: mappedType,
+        title: `Security Alert: ${mappedType}`,
         description,
-        severity: severity as any, // Cast to SecuritySeverity enum
+        severity: severityEnum,
         isResolved: false,
-        createdAt: new Date()
-      }
+        createdAt: new Date(),
+      },
     })
   }
 
-  private static generateAlertDescription(alertType: string, metadata?: Record<string, unknown>): string {
+  private static generateAlertDescription(
+    alertType: string,
+    metadata?: Record<string, unknown>
+  ): string {
     switch (alertType) {
       case 'RAPID_LOGIN_ATTEMPTS':
         return `Rapid login attempts detected: ${metadata?.attempts} attempts from IP ${metadata?.ipAddress}`

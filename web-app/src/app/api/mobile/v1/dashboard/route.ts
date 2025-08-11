@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MobileAPIService } from '@/lib/mobile-api'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
     // Validar autenticación
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
-        MobileAPIService.createResponse(false, undefined, 'Authentication required'),
+        MobileAPIService.createResponse(
+          false,
+          undefined,
+          'Authentication required'
+        ),
         { status: 401 }
       )
     }
@@ -24,13 +27,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener métricas del dashboard
-    const metricsResult = await MobileAPIService.getDashboardMetrics(session.user.id)
+    const metricsResult = await MobileAPIService.getDashboardMetrics(
+      session.user.id
+    )
 
     return NextResponse.json(metricsResult)
   } catch (error) {
     console.error('Mobile dashboard error:', error)
     return NextResponse.json(
-      MobileAPIService.createResponse(false, undefined, 'Internal server error'),
+      MobileAPIService.createResponse(
+        false,
+        undefined,
+        'Internal server error'
+      ),
       { status: 500 }
     )
   }

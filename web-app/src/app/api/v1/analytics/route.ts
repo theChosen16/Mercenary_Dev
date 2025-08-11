@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { AnalyticsService } from '@/lib/analytics'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
-    const timeRange = searchParams.get('timeRange') as '24h' | '7d' | '30d' | '90d' | '1y' || '30d'
+    const timeRange =
+      (searchParams.get('timeRange') as '30d' | '90d' | '1y') || '30d'
     const type = searchParams.get('type') || 'dashboard'
 
     // Check if user is admin for full analytics
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true }
+      select: { role: true },
     })
 
     if (type === 'dashboard') {
@@ -26,7 +27,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(metrics)
       } else {
         // Return user-specific analytics
-        const userAnalytics = await AnalyticsService.getUserAnalytics(session.user.id, timeRange)
+        const userAnalytics = await AnalyticsService.getUserAnalytics(
+          session.user.id,
+          timeRange
+        )
         return NextResponse.json(userAnalytics)
       }
     }
@@ -36,7 +40,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(realTimeMetrics)
     }
 
-    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Invalid type parameter' },
+      { status: 400 }
+    )
   } catch (error) {
     console.error('Analytics API error:', error)
     return NextResponse.json(
@@ -48,7 +55,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Check if user is admin
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true }
+      select: { role: true },
     })
 
     if (user?.role !== 'ADMIN') {
@@ -76,8 +83,8 @@ export async function POST(request: NextRequest) {
       return new NextResponse(report as string, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="${reportType}-report-${timeRange}.csv"`
-        }
+          'Content-Disposition': `attachment; filename="${reportType}-report-${timeRange}.csv"`,
+        },
       })
     }
 

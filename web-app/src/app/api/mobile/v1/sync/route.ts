@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MobileAPIService } from '@/lib/mobile-api'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
     // Validar autenticación
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
-        MobileAPIService.createResponse(false, undefined, 'Authentication required'),
+        MobileAPIService.createResponse(
+          false,
+          undefined,
+          'Authentication required'
+        ),
         { status: 401 }
       )
     }
@@ -25,13 +28,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Sincronizar datos
-    const syncResult = await MobileAPIService.syncData(session.user.id, lastSync || undefined)
+    const syncResult = await MobileAPIService.syncData(
+      session.user.id,
+      lastSync || undefined
+    )
 
     return NextResponse.json(syncResult)
   } catch (error) {
     console.error('Mobile sync error:', error)
     return NextResponse.json(
-      MobileAPIService.createResponse(false, undefined, 'Internal server error'),
+      MobileAPIService.createResponse(
+        false,
+        undefined,
+        'Internal server error'
+      ),
       { status: 500 }
     )
   }
@@ -40,10 +50,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Validar autenticación
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
-        MobileAPIService.createResponse(false, undefined, 'Authentication required'),
+        MobileAPIService.createResponse(
+          false,
+          undefined,
+          'Authentication required'
+        ),
         { status: 401 }
       )
     }
@@ -55,18 +69,25 @@ export async function POST(request: NextRequest) {
     if (deviceInfo) {
       await MobileAPIService.registerDevice(session.user.id, {
         ...deviceInfo,
-        lastActive: new Date()
+        lastSeen: new Date(),
       })
     }
 
     // Sincronizar datos
-    const syncResult = await MobileAPIService.syncData(session.user.id, lastSync)
+    const syncResult = await MobileAPIService.syncData(
+      session.user.id,
+      lastSync
+    )
 
     return NextResponse.json(syncResult)
   } catch (error) {
     console.error('Mobile sync POST error:', error)
     return NextResponse.json(
-      MobileAPIService.createResponse(false, undefined, 'Internal server error'),
+      MobileAPIService.createResponse(
+        false,
+        undefined,
+        'Internal server error'
+      ),
       { status: 500 }
     )
   }

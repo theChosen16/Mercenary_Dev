@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { IntelligentSearchService } from '@/lib/search'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -15,10 +14,16 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
 
     if (!projectId) {
-      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      )
     }
 
-    const matches = await IntelligentSearchService.findBestMatches(projectId, limit)
+    const matches = await IntelligentSearchService.findBestMatches(
+      projectId,
+      limit
+    )
 
     return NextResponse.json({ matches })
   } catch (error) {
@@ -32,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -49,7 +54,10 @@ export async function POST(request: NextRequest) {
 
     // This would typically save a match recommendation or invitation
     // For now, we'll just return the matching score
-    const matches = await IntelligentSearchService.findBestMatches(projectId, 50)
+    const matches = await IntelligentSearchService.findBestMatches(
+      projectId,
+      50
+    )
     const specificMatch = matches.find(m => m.freelancerId === freelancerId)
 
     if (!specificMatch) {

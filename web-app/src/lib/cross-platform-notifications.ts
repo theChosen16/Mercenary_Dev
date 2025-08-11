@@ -1,15 +1,16 @@
 import { prisma } from '@/lib/prisma'
+import type { NotificationType } from '@prisma/client'
 
 export interface CrossPlatformNotification {
   id: string
   userId: string
   title: string
   message: string
-  type: 'PROJECT' | 'CHAT' | 'PAYMENT' | 'SYSTEM' | 'ACHIEVEMENT'
+  type: NotificationType
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   platforms: ('web' | 'mobile' | 'email')[]
   actionUrl?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   scheduledFor?: Date
 }
 
@@ -18,7 +19,7 @@ export interface PushNotificationPayload {
   body: string
   icon?: string
   badge?: number
-  data?: Record<string, any>
+  data?: Record<string, unknown>
   actions?: Array<{
     action: string
     title: string
@@ -38,6 +39,7 @@ export interface DeviceSubscription {
       auth: string
     }
   }
+  lastSeen?: Date
   preferences: {
     projects: boolean
     chat: boolean
@@ -49,7 +51,9 @@ export interface DeviceSubscription {
 
 export class CrossPlatformNotificationService {
   // Enviar notificación a todas las plataformas
-  static async sendNotification(notification: CrossPlatformNotification): Promise<boolean> {
+  static async sendNotification(
+    notification: CrossPlatformNotification
+  ): Promise<boolean> {
     try {
       // Crear notificación en base de datos
       const dbNotification = await prisma.notification.create({
@@ -58,31 +62,35 @@ export class CrossPlatformNotificationService {
           title: notification.title,
           message: notification.message,
           type: notification.type,
-          actionUrl: notification.actionUrl,
-          metadata: notification.metadata ? JSON.stringify(notification.metadata) : null
-        }
+          data: JSON.stringify({
+            actionUrl: notification.actionUrl ?? null,
+            metadata: notification.metadata ?? null,
+          }),
+        },
       })
 
       // Obtener dispositivos del usuario
       const devices = await this.getUserDevices(notification.userId)
 
       // Filtrar dispositivos según plataformas especificadas
-      const targetDevices = devices.filter(device => 
-        notification.platforms.includes(device.platform as any)
-      )
+      const targetDevices = devices.filter(device => {
+        const platformKey: 'web' | 'mobile' | 'email' =
+          device.platform === 'web' ? 'web' : 'mobile'
+        return notification.platforms.includes(platformKey)
+      })
 
       // Enviar a cada plataforma
       const results = await Promise.allSettled([
         ...targetDevices.map(device => this.sendToDevice(device, notification)),
         // Enviar email si está en las plataformas
-        notification.platforms.includes('email') 
+        notification.platforms.includes('email')
           ? this.sendEmailNotification(notification)
-          : Promise.resolve(true)
+          : Promise.resolve(true),
       ])
 
       // Verificar si al menos una notificación fue exitosa
-      const successCount = results.filter(result => 
-        result.status === 'fulfilled' && result.value === true
+      const successCount = results.filter(
+        result => result.status === 'fulfilled' && result.value === true
       ).length
 
       return successCount > 0
@@ -100,29 +108,28 @@ export class CrossPlatformNotificationService {
         include: {
           user: {
             select: {
-              notificationPreferences: true
-            }
-          }
-        }
+              notificationPreferences: true,
+            },
+          },
+        },
       })
 
       return devices.map(device => ({
         userId: device.userId,
         deviceId: device.deviceId,
         platform: device.platform as 'web' | 'ios' | 'android',
-        pushToken: device.pushToken || undefined,
-        webPushSubscription: device.webPushSubscription 
-          ? JSON.parse(device.webPushSubscription)
-          : undefined,
-        preferences: device.user?.notificationPreferences 
+        pushToken: undefined,
+        webPushSubscription: undefined,
+        lastSeen: device.lastSeen,
+        preferences: device.user?.notificationPreferences
           ? JSON.parse(device.user.notificationPreferences)
           : {
               projects: true,
               chat: true,
               payments: true,
               system: true,
-              achievements: true
-            }
+              achievements: true,
+            },
       }))
     } catch (error) {
       console.error('Error getting user devices:', error)
@@ -132,13 +139,21 @@ export class CrossPlatformNotificationService {
 
   // Enviar notificación a un dispositivo específico
   static async sendToDevice(
-    device: DeviceSubscription, 
+    device: DeviceSubscription,
     notification: CrossPlatformNotification
   ): Promise<boolean> {
     try {
       // Verificar preferencias del usuario
-      const notificationType = notification.type.toLowerCase() as keyof typeof device.preferences
-      if (!device.preferences[notificationType]) {
+      const prefKey: keyof DeviceSubscription['preferences'] =
+        notification.type === 'PROJECT_UPDATE'
+          ? 'projects'
+          : notification.type === 'MESSAGE'
+            ? 'chat'
+            : notification.type === 'PAYMENT'
+              ? 'payments'
+              : 'system'
+
+      if (!device.preferences[prefKey]) {
         return true // Usuario ha deshabilitado este tipo de notificación
       }
 
@@ -150,8 +165,8 @@ export class CrossPlatformNotificationService {
         data: {
           url: notification.actionUrl,
           type: notification.type,
-          ...notification.metadata
-        }
+          ...notification.metadata,
+        },
       }
 
       switch (device.platform) {
@@ -165,13 +180,19 @@ export class CrossPlatformNotificationService {
           return false
       }
     } catch (error) {
-      console.error(`Error sending notification to ${device.platform} device:`, error)
+      console.error(
+        `Error sending notification to ${device.platform} device:`,
+        error
+      )
       return false
     }
   }
 
   // Enviar push notification web
-  static async sendWebPush(device: DeviceSubscription, payload: PushNotificationPayload): Promise<boolean> {
+  static async sendWebPush(
+    device: DeviceSubscription,
+    payload: PushNotificationPayload
+  ): Promise<boolean> {
     try {
       if (!device.webPushSubscription) {
         return false
@@ -180,7 +201,7 @@ export class CrossPlatformNotificationService {
       // En una implementación real, usarías web-push library
       console.log('Sending web push notification:', {
         subscription: device.webPushSubscription,
-        payload
+        payload,
       })
 
       // Simular envío exitoso
@@ -192,7 +213,10 @@ export class CrossPlatformNotificationService {
   }
 
   // Enviar push notification iOS
-  static async sendIOSPush(device: DeviceSubscription, payload: PushNotificationPayload): Promise<boolean> {
+  static async sendIOSPush(
+    device: DeviceSubscription,
+    payload: PushNotificationPayload
+  ): Promise<boolean> {
     try {
       if (!device.pushToken) {
         return false
@@ -205,13 +229,13 @@ export class CrossPlatformNotificationService {
           aps: {
             alert: {
               title: payload.title,
-              body: payload.body
+              body: payload.body,
             },
             badge: payload.badge,
-            sound: 'default'
+            sound: 'default',
           },
-          data: payload.data
-        }
+          data: payload.data,
+        },
       })
 
       // Simular envío exitoso
@@ -223,7 +247,10 @@ export class CrossPlatformNotificationService {
   }
 
   // Enviar push notification Android
-  static async sendAndroidPush(device: DeviceSubscription, payload: PushNotificationPayload): Promise<boolean> {
+  static async sendAndroidPush(
+    device: DeviceSubscription,
+    payload: PushNotificationPayload
+  ): Promise<boolean> {
     try {
       if (!device.pushToken) {
         return false
@@ -235,9 +262,9 @@ export class CrossPlatformNotificationService {
         notification: {
           title: payload.title,
           body: payload.body,
-          icon: payload.icon
+          icon: payload.icon,
         },
-        data: payload.data
+        data: payload.data,
       })
 
       // Simular envío exitoso
@@ -249,11 +276,13 @@ export class CrossPlatformNotificationService {
   }
 
   // Enviar notificación por email
-  static async sendEmailNotification(notification: CrossPlatformNotification): Promise<boolean> {
+  static async sendEmailNotification(
+    notification: CrossPlatformNotification
+  ): Promise<boolean> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: notification.userId },
-        select: { email: true, name: true }
+        select: { email: true, name: true },
       })
 
       if (!user) {
@@ -270,7 +299,7 @@ export class CrossPlatformNotificationService {
           <p>${notification.message}</p>
           ${notification.actionUrl ? `<a href="${notification.actionUrl}">Ver más</a>` : ''}
           <p>Saludos,<br>Equipo Mercenary</p>
-        `
+        `,
       })
 
       // Simular envío exitoso
@@ -287,8 +316,8 @@ export class CrossPlatformNotificationService {
       return await prisma.notification.count({
         where: {
           userId,
-          isRead: false
-        }
+          isRead: false,
+        },
       })
     } catch (error) {
       console.error('Error getting unread count:', error)
@@ -297,41 +326,27 @@ export class CrossPlatformNotificationService {
   }
 
   // Registrar suscripción de dispositivo
-  static async registerDeviceSubscription(subscription: DeviceSubscription): Promise<boolean> {
+  static async registerDeviceSubscription(
+    subscription: DeviceSubscription
+  ): Promise<boolean> {
     try {
-      await prisma.device.upsert({
+      await prisma.device.updateMany({
         where: {
-          userId_deviceId: {
-            userId: subscription.userId,
-            deviceId: subscription.deviceId
-          }
-        },
-        update: {
-          platform: subscription.platform,
-          pushToken: subscription.pushToken,
-          webPushSubscription: subscription.webPushSubscription 
-            ? JSON.stringify(subscription.webPushSubscription)
-            : null,
-          lastActive: new Date()
-        },
-        create: {
           userId: subscription.userId,
           deviceId: subscription.deviceId,
+        },
+        data: {
           platform: subscription.platform,
-          pushToken: subscription.pushToken,
-          webPushSubscription: subscription.webPushSubscription 
-            ? JSON.stringify(subscription.webPushSubscription)
-            : null,
-          lastActive: new Date()
-        }
+          lastSeen: new Date(),
+        },
       })
 
       // Actualizar preferencias de notificación del usuario
       await prisma.user.update({
         where: { id: subscription.userId },
         data: {
-          notificationPreferences: JSON.stringify(subscription.preferences)
-        }
+          notificationPreferences: JSON.stringify(subscription.preferences),
+        },
       })
 
       return true
@@ -343,35 +358,35 @@ export class CrossPlatformNotificationService {
 
   // Actualizar preferencias de notificación
   static async updateNotificationPreferences(
-    userId: string, 
+    userId: string,
     preferences: Partial<DeviceSubscription['preferences']>
   ): Promise<boolean> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { notificationPreferences: true }
+        select: { notificationPreferences: true },
       })
 
-      const currentPreferences = user?.notificationPreferences 
+      const currentPreferences = user?.notificationPreferences
         ? JSON.parse(user.notificationPreferences)
         : {
             projects: true,
             chat: true,
             payments: true,
             system: true,
-            achievements: true
+            achievements: true,
           }
 
       const updatedPreferences = {
         ...currentPreferences,
-        ...preferences
+        ...preferences,
       }
 
       await prisma.user.update({
         where: { id: userId },
         data: {
-          notificationPreferences: JSON.stringify(updatedPreferences)
-        }
+          notificationPreferences: JSON.stringify(updatedPreferences),
+        },
       })
 
       return true
@@ -383,7 +398,7 @@ export class CrossPlatformNotificationService {
 
   // Enviar notificación de proyecto
   static async notifyProjectUpdate(
-    projectId: string, 
+    projectId: string,
     type: 'created' | 'updated' | 'completed' | 'cancelled',
     message: string
   ): Promise<void> {
@@ -392,8 +407,8 @@ export class CrossPlatformNotificationService {
         where: { id: projectId },
         include: {
           client: true,
-          freelancer: true
-        }
+          freelancer: true,
+        },
       })
 
       if (!project) return
@@ -409,15 +424,15 @@ export class CrossPlatformNotificationService {
           userId: recipient.id,
           title: `Proyecto ${type === 'created' ? 'Creado' : type === 'updated' ? 'Actualizado' : type === 'completed' ? 'Completado' : 'Cancelado'}`,
           message,
-          type: 'PROJECT',
+          type: 'PROJECT_UPDATE',
           priority: type === 'completed' ? 'HIGH' : 'MEDIUM',
           platforms: ['web', 'mobile', 'email'],
           actionUrl: `/projects/${projectId}`,
           metadata: {
             projectId,
             projectTitle: project.title,
-            type
-          }
+            type,
+          },
         })
       }
     } catch (error) {
@@ -435,7 +450,7 @@ export class CrossPlatformNotificationService {
     try {
       const sender = await prisma.user.findUnique({
         where: { id: senderId },
-        select: { name: true }
+        select: { name: true },
       })
 
       if (!sender) return
@@ -444,16 +459,17 @@ export class CrossPlatformNotificationService {
         id: `message-${Date.now()}`,
         userId: receiverId,
         title: `Nuevo mensaje de ${sender.name}`,
-        message: message.length > 100 ? `${message.substring(0, 100)}...` : message,
-        type: 'CHAT',
+        message:
+          message.length > 100 ? `${message.substring(0, 100)}...` : message,
+        type: 'MESSAGE',
         priority: 'MEDIUM',
         platforms: ['web', 'mobile'],
         actionUrl: `/chat/${roomId}`,
         metadata: {
           senderId,
           senderName: sender.name,
-          roomId
-        }
+          roomId,
+        },
       })
     } catch (error) {
       console.error('Error sending chat notification:', error)
@@ -472,7 +488,7 @@ export class CrossPlatformNotificationService {
         received: 'Pago Recibido',
         sent: 'Pago Enviado',
         released: 'Pago Liberado',
-        disputed: 'Disputa de Pago'
+        disputed: 'Disputa de Pago',
       }
 
       await this.sendNotification({
@@ -487,8 +503,8 @@ export class CrossPlatformNotificationService {
         metadata: {
           amount,
           projectTitle,
-          type
-        }
+          type,
+        },
       })
     } catch (error) {
       console.error('Error sending payment notification:', error)

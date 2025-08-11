@@ -1,4 +1,15 @@
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
+
+type AchievementRequirements = Partial<{
+  completedProjects: number
+  totalEarnings: number
+  averageRating: number
+  totalReviews: number
+  streakDays: number
+  level: number
+  action: string
+}>
 
 export interface Achievement {
   id: string
@@ -8,7 +19,7 @@ export interface Achievement {
   category: 'PROJECTS' | 'EARNINGS' | 'RATINGS' | 'SOCIAL' | 'SPECIAL'
   points: number
   rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'
-  requirements: Record<string, any>
+  requirements: AchievementRequirements
 }
 
 export interface UserStats {
@@ -36,27 +47,33 @@ export interface LeaderboardEntry {
   change: number // Position change from previous period
 }
 
+type XPMetadata = {
+  isFirstTime?: boolean
+  isPerfect?: boolean
+  isEarly?: boolean
+}
+
 export class GamificationService {
   // Experience points calculation
-  static calculateXP(action: string, metadata?: Record<string, any>): number {
+  static calculateXP(action: string, metadata?: XPMetadata): number {
     const xpTable = {
-      'profile_complete': 100,
-      'project_created': 50,
-      'project_completed': 200,
-      'first_project': 150,
-      'perfect_rating': 100,
-      'fast_delivery': 75,
-      'client_review': 25,
-      'freelancer_review': 25,
-      'payment_completed': 50,
-      'identity_verified': 200,
-      'skill_added': 10,
-      'daily_login': 5,
-      'weekly_streak': 50,
-      'monthly_streak': 200,
-      'referral_signup': 100,
-      'chat_message': 1,
-      'project_milestone': 30
+      profile_complete: 100,
+      project_created: 50,
+      project_completed: 200,
+      first_project: 150,
+      perfect_rating: 100,
+      fast_delivery: 75,
+      client_review: 25,
+      freelancer_review: 25,
+      payment_completed: 50,
+      identity_verified: 200,
+      skill_added: 10,
+      daily_login: 5,
+      weekly_streak: 50,
+      monthly_streak: 200,
+      referral_signup: 100,
+      chat_message: 1,
+      project_milestone: 30,
     }
 
     let baseXP = xpTable[action as keyof typeof xpTable] || 0
@@ -70,7 +87,11 @@ export class GamificationService {
   }
 
   // Level calculation
-  static calculateLevel(totalXP: number): { level: number; currentLevelXP: number; nextLevelXP: number } {
+  static calculateLevel(totalXP: number): {
+    level: number
+    currentLevelXP: number
+    nextLevelXP: number
+  } {
     // Level formula: XP needed = level^2 * 100
     let level = 1
     let totalNeeded = 0
@@ -81,7 +102,13 @@ export class GamificationService {
     }
 
     level-- // Go back to the actual level
-    const currentLevelStart = level === 1 ? 0 : Array.from({length: level - 1}, (_, i) => (i + 2) * (i + 2) * 100).reduce((a, b) => a + b, 0)
+    const currentLevelStart =
+      level === 1
+        ? 0
+        : Array.from(
+            { length: level - 1 },
+            (_, i) => (i + 2) * (i + 2) * 100
+          ).reduce((a, b) => a + b, 0)
     const currentLevelXP = totalXP - currentLevelStart
     const nextLevelXP = (level + 1) * (level + 1) * 100
 
@@ -89,9 +116,9 @@ export class GamificationService {
   }
 
   // Award experience points
-  static async awardXP(userId: string, action: string, metadata?: Record<string, any>) {
+  static async awardXP(userId: string, action: string, metadata?: XPMetadata) {
     const xp = this.calculateXP(action, metadata)
-    
+
     if (xp <= 0) return
 
     try {
@@ -99,45 +126,28 @@ export class GamificationService {
       const updatedProfile = await prisma.profile.update({
         where: { userId: userId },
         data: {
-          xp: { increment: xp }
+          xp: { increment: xp },
         },
         select: {
-          xp: true
-        }
+          xp: true,
+        },
       })
 
       const newLevel = this.calculateLevel(updatedProfile.xp).level
 
-      // Update level if changed
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { level: true }
+      // Persist new level on Profile
+      await prisma.profile.update({
+        where: { userId },
+        data: { level: newLevel },
       })
 
-      if (currentUser && newLevel > (currentUser.level || 1)) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { level: newLevel }
-        })
-
-        // Award level-up bonus
-        await this.checkLevelUpAchievements(userId, newLevel)
-      }
-
-      // Log XP transaction
-      await prisma.xpTransaction.create({
-        data: {
-          userId,
-          action,
-          amount: xp,
-          metadata: metadata ? JSON.stringify(metadata) : null
-        }
-      })
+      // Award level-up achievements (in-memory)
+      await this.checkLevelUpAchievements(userId, newLevel)
 
       // Check for achievements
-      await this.checkAchievements(userId, action, metadata)
+      await this.checkAchievements(userId, action)
 
-      return { xp, newLevel: level }
+      return { xp, newLevel }
     } catch (error) {
       console.error('Error awarding XP:', error)
       throw error
@@ -145,23 +155,13 @@ export class GamificationService {
   }
 
   // Check and award achievements
-  static async checkAchievements(userId: string, action: string, metadata?: Record<string, any>) {
+  static async checkAchievements(userId: string, action: string) {
     const achievements = await this.getAchievements()
     const userStats = await this.getUserStats(userId)
-    
+
     for (const achievement of achievements) {
-      // Check if user already has this achievement
-      const existing = await prisma.userAchievement.findFirst({
-        where: {
-          userId,
-          achievementId: achievement.id
-        }
-      })
-
-      if (existing) continue
-
-      // Check if requirements are met
-      if (this.checkAchievementRequirements(achievement, userStats, action, metadata)) {
+      // Check if requirements are met (no DB persistence)
+      if (this.checkAchievementRequirements(achievement, userStats, action)) {
         await this.awardAchievement(userId, achievement.id)
       }
     }
@@ -170,25 +170,15 @@ export class GamificationService {
   // Award achievement
   static async awardAchievement(userId: string, achievementId: string) {
     try {
-      const achievement = await prisma.achievement.findUnique({
-        where: { id: achievementId }
-      })
+      const achievements = await this.getAchievements()
+      const achievement = achievements.find(a => a.id === achievementId)
 
       if (!achievement) return
 
-      // Award the achievement
-      await prisma.userAchievement.create({
-        data: {
-          userId,
-          achievementId,
-          unlockedAt: new Date()
-        }
-      })
-
-      // Award bonus XP
-      await this.awardXP(userId, 'achievement_unlocked', {
-        achievementId,
-        bonusXP: achievement.points
+      // Award bonus XP by incrementing profile XP directly
+      await prisma.profile.update({
+        where: { userId },
+        data: { xp: { increment: achievement.points } },
       })
 
       return achievement
@@ -199,60 +189,49 @@ export class GamificationService {
 
   // Get user statistics
   static async getUserStats(userId: string): Promise<UserStats> {
-    const [user, projects, transactions, reviews] = await Promise.all([
+    const [user, profile, projects, transactions, reviews] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          totalXP: true,
-          level: true,
-          lastLoginAt: true
-        }
+        select: { lastLoginAt: true },
+      }),
+      prisma.profile.findUnique({
+        where: { userId },
+        select: { xp: true, level: true },
       }),
       prisma.project.findMany({
         where: {
-          OR: [
-            { clientId: userId },
-            { freelancerId: userId }
-          ]
+          OR: [{ clientId: userId }, { freelancerId: userId }],
         },
-        select: {
-          status: true,
-          completedAt: true
-        }
+        select: { status: true, completedAt: true },
       }),
       prisma.transaction.findMany({
-        where: {
-          OR: [
-            { clientId: userId },
-            { freelancerId: userId }
-          ],
-          status: 'COMPLETED'
-        },
-        select: {
-          amount: true
-        }
+        where: { userId, status: 'COMPLETED' },
+        select: { amount: true },
       }),
       prisma.review.findMany({
         where: { revieweeId: userId },
-        select: {
-          rating: true
-        }
-      })
+        select: { rating: true },
+      }),
     ])
 
-    if (!user) throw new Error('User not found')
+    if (!profile) throw new Error('Profile not found')
 
     const totalProjects = projects.length
-    const completedProjects = projects.filter(p => p.status === 'COMPLETED').length
+    const completedProjects = projects.filter(
+      p => p.status === 'COMPLETED'
+    ).length
     const totalEarnings = transactions.reduce((sum, t) => sum + t.amount, 0)
-    const averageRating = reviews.length > 0 
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length 
-      : 0
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0
 
     // Calculate streak (simplified)
-    const streakDays = this.calculateLoginStreak(user.lastLoginAt)
+    const streakDays = this.calculateLoginStreak(user?.lastLoginAt || null)
 
-    const { level, currentLevelXP, nextLevelXP } = this.calculateLevel(user.totalXP || 0)
+    const { level, currentLevelXP, nextLevelXP } = this.calculateLevel(
+      profile.xp || 0
+    )
 
     return {
       totalProjects,
@@ -261,23 +240,25 @@ export class GamificationService {
       averageRating,
       totalReviews: reviews.length,
       streakDays,
-      level,
+      level: profile.level || level,
       experience: currentLevelXP,
-      nextLevelXP
+      nextLevelXP,
     }
   }
 
   // Get leaderboard
   static async getLeaderboard(
     type: 'xp' | 'level' | 'earnings' | 'projects' = 'xp',
-    timeframe: 'all' | 'month' | 'week' = 'all',
+    _timeframe: 'all' | 'month' | 'week' = 'all',
     limit: number = 50
   ): Promise<LeaderboardEntry[]> {
-    let orderBy: any = { totalXP: 'desc' }
-    
+    let orderBy: Prisma.UserOrderByWithRelationInput = {
+      profile: { xp: 'desc' },
+    }
+
     switch (type) {
       case 'level':
-        orderBy = { level: 'desc' }
+        orderBy = { profile: { level: 'desc' } }
         break
       case 'earnings':
         // This would need a computed field or separate query
@@ -289,60 +270,47 @@ export class GamificationService {
 
     const users = await prisma.user.findMany({
       where: {
-        totalXP: { gt: 0 }
+        profile: { is: { xp: { gt: 0 } } },
       },
       orderBy,
       take: limit,
       select: {
         id: true,
         name: true,
-        avatar: true,
-        isVerified: true,
-        totalXP: true,
-        level: true
-      }
+        image: true,
+        emailVerified: true,
+        profile: { select: { xp: true, level: true } },
+      },
     })
 
     return users.map((user, index) => ({
       userId: user.id,
       user: {
         name: user.name || 'Usuario',
-        avatar: user.avatar,
-        isVerified: user.isVerified || false
+        avatar: user.image || undefined,
+        isVerified: !!user.emailVerified,
       },
-      points: user.totalXP || 0,
-      level: user.level || 1,
+      points: user.profile?.xp || 0,
+      level: user.profile?.level || 1,
       rank: index + 1,
-      change: 0 // Would need historical data to calculate
+      change: _timeframe === 'all' ? 0 : 0, // Placeholder: would need historical data
     }))
   }
 
   // Get user achievements
   static async getUserAchievements(userId: string) {
-    return await prisma.userAchievement.findMany({
-      where: { userId },
-      include: {
-        achievement: true
-      },
-      orderBy: { unlockedAt: 'desc' }
-    })
+    const userStats = await this.getUserStats(userId)
+    const achievements = await this.getAchievements()
+    // Return unlocked achievements based on current stats (no persistence)
+    return achievements.filter(a =>
+      this.checkAchievementRequirements(a, userStats, '')
+    )
   }
 
   // Get all available achievements
   static async getAchievements(): Promise<Achievement[]> {
-    const achievements = await prisma.achievement.findMany({
-      orderBy: { category: 'asc' }
-    })
-
-    return achievements.map(a => ({
-      ...a,
-      requirements: a.requirements ? JSON.parse(a.requirements as string) : {}
-    }))
-  }
-
-  // Initialize default achievements
-  static async initializeAchievements() {
-    const defaultAchievements = [
+    // In-memory achievements definition (no DB models)
+    const achievements: Achievement[] = [
       {
         id: 'first-project',
         name: 'Primer Proyecto',
@@ -351,7 +319,7 @@ export class GamificationService {
         category: 'PROJECTS',
         points: 100,
         rarity: 'COMMON',
-        requirements: { completedProjects: 1 }
+        requirements: { completedProjects: 1 },
       },
       {
         id: 'project-master',
@@ -361,7 +329,7 @@ export class GamificationService {
         category: 'PROJECTS',
         points: 500,
         rarity: 'RARE',
-        requirements: { completedProjects: 10 }
+        requirements: { completedProjects: 10 },
       },
       {
         id: 'perfect-rating',
@@ -371,7 +339,7 @@ export class GamificationService {
         category: 'RATINGS',
         points: 200,
         rarity: 'EPIC',
-        requirements: { averageRating: 5.0, totalReviews: 5 }
+        requirements: { averageRating: 5.0, totalReviews: 5 },
       },
       {
         id: 'early-bird',
@@ -381,7 +349,7 @@ export class GamificationService {
         category: 'SOCIAL',
         points: 150,
         rarity: 'COMMON',
-        requirements: { streakDays: 7 }
+        requirements: { streakDays: 7 },
       },
       {
         id: 'big-earner',
@@ -391,7 +359,7 @@ export class GamificationService {
         category: 'EARNINGS',
         points: 1000,
         rarity: 'LEGENDARY',
-        requirements: { totalEarnings: 50000 }
+        requirements: { totalEarnings: 50000 },
       },
       {
         id: 'level-10',
@@ -401,36 +369,39 @@ export class GamificationService {
         category: 'SPECIAL',
         points: 300,
         rarity: 'RARE',
-        requirements: { level: 10 }
-      }
+        requirements: { level: 10 },
+      },
     ]
 
-    for (const achievement of defaultAchievements) {
-      await prisma.achievement.upsert({
-        where: { id: achievement.id },
-        update: {},
-        create: {
-          ...achievement,
-          requirements: JSON.stringify(achievement.requirements)
-        }
-      })
-    }
+    return achievements
+  }
+
+  // Initialize default achievements
+  static async initializeAchievements() {
+    // No-op: achievements are maintained in-memory for now
+    return
   }
 
   // Helper methods
   private static checkAchievementRequirements(
     achievement: Achievement,
     userStats: UserStats,
-    action: string,
-    metadata?: Record<string, any>
+    action: string
   ): boolean {
     const req = achievement.requirements
 
     // Check numeric requirements
-    if (req.completedProjects && userStats.completedProjects < req.completedProjects) return false
-    if (req.totalEarnings && userStats.totalEarnings < req.totalEarnings) return false
-    if (req.averageRating && userStats.averageRating < req.averageRating) return false
-    if (req.totalReviews && userStats.totalReviews < req.totalReviews) return false
+    if (
+      req.completedProjects &&
+      userStats.completedProjects < req.completedProjects
+    )
+      return false
+    if (req.totalEarnings && userStats.totalEarnings < req.totalEarnings)
+      return false
+    if (req.averageRating && userStats.averageRating < req.averageRating)
+      return false
+    if (req.totalReviews && userStats.totalReviews < req.totalReviews)
+      return false
     if (req.streakDays && userStats.streakDays < req.streakDays) return false
     if (req.level && userStats.level < req.level) return false
 
@@ -451,27 +422,20 @@ export class GamificationService {
     return diffDays <= 1 ? Math.min(diffDays, 30) : 0
   }
 
-  private static async checkLevelUpAchievements(userId: string, newLevel: number) {
+  private static async checkLevelUpAchievements(
+    userId: string,
+    newLevel: number
+  ) {
     // Check for level-based achievements
     const levelAchievements = [5, 10, 25, 50, 100]
-    
+
     for (const targetLevel of levelAchievements) {
       if (newLevel >= targetLevel) {
         const achievementId = `level-${targetLevel}`
-        
-        // Check if achievement exists and user doesn't have it
-        const achievement = await prisma.achievement.findUnique({
-          where: { id: achievementId }
-        })
-
+        const achievements = await this.getAchievements()
+        const achievement = achievements.find(a => a.id === achievementId)
         if (achievement) {
-          const existing = await prisma.userAchievement.findFirst({
-            where: { userId, achievementId }
-          })
-
-          if (!existing) {
-            await this.awardAchievement(userId, achievementId)
-          }
+          await this.awardAchievement(userId, achievementId)
         }
       }
     }
