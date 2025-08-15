@@ -22,6 +22,28 @@ This file contains a list of tasks suitable for Jules to work on asynchronously.
   - **Description:** Add a search input field on the user list page that filters users by their name or email in real-time (or with a button click).
   - **Acceptance Criteria:** Typing in the search box filters the displayed list of users based on the input.
 
+## Tasks for web-informative
+
+- **Task: Correct Technology Stack Inconsistencies**
+  - **Description:** The `index.html` file for the informational website mentions both `SQLAlchemy` and `Prisma ORM`. The project uses `Prisma ORM`. This task is to remove the mention of `SQLAlchemy` and ensure `Prisma ORM` is listed consistently.
+  - **Acceptance Criteria:** The `web-informative/index.html` file should only mention `Prisma ORM`.
+
+- **Task: Resolve Payment Provider Contradiction**
+  - **Description:** The site mentions both `Stripe` and `MercadoPago`. The project has standardized on `MercadoPago`. This task is to remove all mentions of `Stripe` and replace them with `MercadoPago` where appropriate.
+  - **Acceptance Criteria:** All references to payment providers in `web-informative/index.html` should be for `MercadoPago`.
+
+- **Task: Implement 'Ver Demo' Button Functionality**
+  - **Description:** The 'Ver Demo' button in the hero section is currently a non-functional `<button>`. This task is to convert it into a functional link.
+  - **Acceptance Criteria:** The button should be an `<a>` tag pointing to a placeholder URL like `https://www.youtube.com/watch?v=placeholder` and open in a new tab.
+
+- **Task: Improve Image Accessibility**
+  - **Description:** The technology logos in `index.html` are missing descriptive `alt` attributes, which is bad for SEO and accessibility.
+  - **Acceptance Criteria:** All `<img>` tags for technology logos must have descriptive alt text (e.g., `alt="Flutter Logo"`).
+
+- **Task: Update Website Content to Current Year**
+  - **Description:** The website content refers to the year 2025 for its launch and project status. This should be updated to the current year to reflect that the project is active.
+  - **Acceptance Criteria:** All mentions of the year 2025 in `web-informative/index.html` should be updated to the current year.
+
 ## Other Software Engineering Tasks
 
 - **Refactor: Improve configuration handling**
