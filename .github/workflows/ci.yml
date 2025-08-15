@@ -1,0 +1,41 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Set up PowerShell
+      uses: ftriglia/setup-powershell@v1
+      with:
+        version: '7.3'
+
+    - name: Create backend tests directory
+      run: mkdir -p backend/tests
+      shell: bash
+
+    - name: Bootstrap environment
+      run: ./scripts/bootstrap.ps1
+      shell: pwsh
+
+    - name: Lint code
+      run: ./scripts/lint.ps1
+      shell: pwsh
+
+    - name: Run tests
+      run: ./scripts/test.ps1
+      shell: pwsh
+      env:
+        LANGCHAIN_TRACING_V2: "true"
+        LANGCHAIN_ENDPOINT: "https://api.smith.langchain.com"
+        LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+        LANGCHAIN_PROJECT: ci-${{ github.repository }}
