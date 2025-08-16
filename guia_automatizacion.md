@@ -22,10 +22,10 @@ Este enfoque prioriza la creación de un entorno de desarrollo local robusto y a
 
 ## 1. Core Tools: Windsurf IDE, GitHub y LangChain
 
-*   **Windsurf IDE**: Un entorno de desarrollo avanzado con un agente de IA, **Cascade**, que entiende el contexto de tu código para automatizar tareas, generar código y acelerar la depuración.
-*   **GitHub**: La plataforma para alojar nuestro código, gestionar el control de versiones con Git y colaborar.
-*   **GitHub Actions**: La herramienta de CI/CD integrada en GitHub que usaremos para automatizar las pruebas de nuestro código en cada `push` y `pull request`.
-*   **LangChain**: Un framework para desarrollar aplicaciones impulsadas por modelos de lenguaje, que se puede integrar en nuestros proyectos para añadir funcionalidades inteligentes.
+* **Windsurf IDE**: Un entorno de desarrollo avanzado con un agente de IA, **Cascade**, que entiende el contexto de tu código para automatizar tareas, generar código y acelerar la depuración.
+* **GitHub**: La plataforma para alojar nuestro código, gestionar el control de versiones con Git y colaborar.
+* **GitHub Actions**: La herramienta de CI/CD integrada en GitHub que usaremos para automatizar las pruebas de nuestro código en cada `push` y `pull request`.
+* **LangChain**: Un framework para desarrollar aplicaciones impulsadas por modelos de lenguaje, que se puede integrar en nuestros proyectos para añadir funcionalidades inteligentes.
 
 ---
 
@@ -93,11 +93,11 @@ La Integración Continua (CI) es una práctica que consiste en fusionar e integr
 
 El archivo `.github/workflows/ci.yml` define nuestro pipeline de CI. Este flujo de trabajo se activa automáticamente en cada `push` o `pull request` a la rama `main` y realiza los siguientes pasos:
 
-1.  **Checkout Code**: Descarga la última versión del código.
-2.  **Setup Environment**: Configura el entorno del runner (ejecutor) con las herramientas necesarias, como PowerShell.
-3.  **Bootstrap**: Ejecuta el script `./scripts/bootstrap.ps1` para instalar todas las dependencias.
-4.  **Lint**: Ejecuta `./scripts/lint.ps1` para asegurar la calidad del código.
-5.  **Test**: Ejecuta `./scripts/test.ps1` para verificar que todos los tests pasan.
+1. **Checkout Code**: Descarga la última versión del código.
+2. **Setup Environment**: Configura el entorno del runner (ejecutor) con las herramientas necesarias, como PowerShell.
+3. **Bootstrap**: Ejecuta el script `./scripts/bootstrap.ps1` para instalar todas las dependencias.
+4. **Lint**: Ejecuta `./scripts/lint.ps1` para asegurar la calidad del código.
+5. **Test**: Ejecuta `./scripts/test.ps1` para verificar que todos los tests pasan.
 
 Si alguno de estos pasos falla, GitHub nos notificará, permitiéndonos corregir el problema antes de que se integre en la rama principal.
 
@@ -111,20 +111,21 @@ Esta sección describe la organización del monorepo `Mercenary_Dev` y el flujo 
 
 El proyecto está organizado como un monorepo para facilitar la gestión de código compartido y la coherencia entre las distintas partes de la aplicación. La estructura principal es la siguiente:
 
-*   `backend/`: Contiene el servidor de la aplicación, construido con FastAPI (Python). Aquí reside toda la lógica de negocio, APIs y la conexión a la base de datos.
-*   `web-app/`: La aplicación web principal (Single Page Application) con la que los usuarios interactúan. Probablemente construida con un framework como React, Vue o Svelte.
-*   `mobile-app/`: La aplicación móvil, posiblemente desarrollada con un framework multiplataforma como React Native o Flutter.
-*   `web-informative/`: Un sitio web estático o de marketing que sirve como la cara pública del proyecto.
-*   `docs/`: Un directorio central que consolida toda la documentación del proyecto, incluyendo manuales de arquitectura, guías de API, hojas de ruta y notas de desarrollo.
-*   `scripts/`: Contiene los scripts de automatización de PowerShell (`bootstrap.ps1`, `lint.ps1`, `test.ps1`) para estandarizar las tareas de desarrollo.
-*   `.github/workflows/`: Define los pipelines de Integración Continua (CI) con GitHub Actions.
+* `backend/`: Contiene el servidor de la aplicación, construido con FastAPI (Python). Aquí reside toda la lógica de negocio, APIs y la conexión a la base de datos.
+* `web-app/`: La aplicación web principal (Single Page Application) con la que los usuarios interactúan. Probablemente construida con un framework como React, Vue o Svelte.
+* `mobile-app/`: La aplicación móvil, posiblemente desarrollada con un framework multiplataforma como React Native o Flutter.
+* `web-informative/`: Un sitio web estático o de marketing que sirve como la cara pública del proyecto.
+* `docs/`: Un directorio central que consolida toda la documentación del proyecto, incluyendo manuales de arquitectura, guías de API, hojas de ruta y notas de desarrollo.
+* `scripts/`: Contiene los scripts de automatización de PowerShell (`bootstrap.ps1`, `lint.ps1`, `test.ps1`) para estandarizar las tareas de desarrollo.
+* `.github/workflows/`: Define los pipelines de Integración Continua (CI) con GitHub Actions.
 
 ### Flujo de Trabajo de Desarrollo Estándar
 
 Aquí se presenta un ciclo de desarrollo típico para añadir una nueva funcionalidad:
 
-1.  **Crear una Rama**: Utiliza el GitHub CLI para crear una nueva rama desde `main` con un nombre descriptivo.
-    ```powershell
+1. **Crear una Rama**: Utiliza el GitHub CLI para crear una nueva rama desde `main` con un nombre descriptivo.
+
+```powershell
     # Asegúrate de estar en la rama 'main' y tener la última versión
     git checkout main
     git pull
@@ -133,11 +134,13 @@ Aquí se presenta un ciclo de desarrollo típico para añadir una nueva funciona
     gh pr checkout -b feature/nombre-de-la-funcionalidad
     ```
 
-2.  **Desarrollar y Codificar**: Realiza los cambios necesarios en el código. Puedes apoyarte en **Cascade** para generar código, refactorizar o depurar.
+2. **Desarrollar y Codificar**: Realiza los cambios necesarios en el código. Puedes apoyarte en **Cascade** para generar código, refactorizar o depurar.
+
     > *Ejemplo de prompt para Cascade: "En el backend, crea un nuevo endpoint en FastAPI en `backend/app/api/v1/endpoints/items.py` que acepte una petición POST para crear un nuevo ítem."*
 
-3.  **Verificar Localmente**: Antes de confirmar tus cambios, utiliza los scripts de automatización para asegurar la calidad del código.
-    ```powershell
+3. **Verificar Localmente**: Antes de confirmar tus cambios, utiliza los scripts de automatización para asegurar la calidad del código.
+
+```powershell
     # Instalar dependencias si es necesario
     ./scripts/bootstrap.ps1
 
@@ -146,28 +149,30 @@ Aquí se presenta un ciclo de desarrollo típico para añadir una nueva funciona
 
     # Ejecutar todas las pruebas
     ./scripts/test.ps1
-    ```
+```
 
-4.  **Confirmar y Subir Cambios**: Haz commit de tus cambios con un mensaje claro y súbelos a GitHub.
-    ```bash
+4. **Confirmar y Subir Cambios**: Haz commit de tus cambios con un mensaje claro y súbelos a GitHub.
+
+```bash
     git add .
     git commit -m "feat: Añade endpoint para crear ítems"
     git push --set-upstream origin feature/nombre-de-la-funcionalidad
-    ```
+```
 
-5.  **Crear un Pull Request**: Usa el GitHub CLI para abrir un pull request y que tu equipo pueda revisar los cambios.
-    ```powershell
+5. **Crear un Pull Request**: Usa el GitHub CLI para abrir un pull request y que tu equipo pueda revisar los cambios.
+
+```powershell
     gh pr create --title "feat: Añade endpoint para crear ítems" --body "Este PR introduce la funcionalidad para crear nuevos ítems a través de la API."
-    ```
-    GitHub Actions ejecutará automáticamente el workflow de CI para verificar que tus cambios no rompen nada.
+```
+
+GitHub Actions ejecutará automáticamente el workflow de CI para verificar que tus cambios no rompen nada.
 
 ### Trabajando con Agentes de IA: Cascade y Jules
 
 Este proyecto está diseñado para maximizar la productividad utilizando agentes de IA especializados.
 
-*   **Cascade (Desarrollo Interactivo)**: Utiliza a Cascade dentro de Windsurf IDE para un pair programming constante. Es ideal para tareas que requieren contexto del código y una interacción rápida, como la escritura de funciones, la depuración de errores en tiempo real o la refactorización de código existente.
-
-*   **Jules (Desarrollo Asíncrono)**: Para tareas que pueden ser delegadas, como la corrección de un bug documentado en un issue o la implementación de una pequeña funcionalidad, puedes usar un agente asíncrono como Jules. Como se ve en la imagen, puedes asignarle una tarea directamente desde su interfaz, seleccionar el repositorio y la rama base, y Jules trabajará en ella de forma autónoma, generando un plan y finalmente un pull request para tu revisión.
+* **Cascade (Desarrollo Interactivo)**: Utiliza a Cascade dentro de Windsurf IDE para un pair programming constante. Es ideal para tareas que requieren contexto del código y una interacción rápida, como la escritura de funciones, la depuración de errores en tiempo real o la refactorización de código existente.
+* **Jules (Desarrollo Asíncrono)**: Para tareas que pueden ser delegadas, como la corrección de un bug documentado en un issue o la implementación de una pequeña funcionalidad, puedes usar un agente asíncrono como Jules. Como se ve en la imagen, puedes asignarle una tarea directamente desde su interfaz, seleccionar el repositorio y la rama base, y Jules trabajará en ella de forma autónoma, generando un plan y finalmente un pull request para tu revisión.
 
     > *Ejemplo de tarea para Jules: "Diagnose this memory leak issue #123 and provide a fix."*
 
@@ -183,10 +188,10 @@ Con Windsurf IDE y Cascade, podemos llevar nuestro desarrollo al siguiente nivel
 
 Cascade es tu asistente de codificación personal. Puedes pedirle que:
 
-*   **Escriba código**: "Crea una función en FastAPI que reciba un ID de usuario y devuelva sus datos".
-*   **Depure errores**: "Estoy recibiendo un error 500 en este endpoint, ¿puedes ayudarme a encontrar la causa?"
-*   **Refactorice código**: "Refactoriza este componente de React para que use React Hooks en lugar de clases".
-*   **Automatice tareas**: "Crea un nuevo script de PowerShell que ejecute la migración de la base de datos del backend".
+* **Escriba código**: "Crea una función en FastAPI que reciba un ID de usuario y devuelva sus datos".
+* **Depure errores**: "Estoy recibiendo un error 500 en este endpoint, ¿puedes ayudarme a encontrar la causa?"
+* **Refactorice código**: "Refactoriza este componente de React para que use React Hooks en lugar de clases".
+* **Automatice tareas**: "Crea un nuevo script de PowerShell que ejecute la migración de la base de datos del backend".
 
 ### Integración de LangChain y MCP Servers
 
@@ -223,7 +228,8 @@ gh auth status
 
 ### Comandos Útiles
 
-*   **Repositorios**:
+* **Repositorios**:
+
     ```powershell
     # Clonar un repositorio
     gh repo clone theChosen16/Mercenary_Dev
@@ -232,7 +238,8 @@ gh auth status
     gh repo create mi-nuevo-proyecto --private --source . --push
     ```
 
-*   **Pull Requests**:
+* **Pull Requests**:
+
     ```powershell
     # Crear un pull request
     gh pr create --title "feat: Nueva funcionalidad" --body "Descripción detallada del PR."
@@ -244,7 +251,8 @@ gh auth status
     gh pr view --web
     ```
 
-*   **GitHub Actions**:
+* **GitHub Actions**:
+
     ```powershell
     # Listar los flujos de trabajo del repositorio
     gh workflow list
@@ -309,9 +317,9 @@ Una vez que el desarrollo local esté maduro y la aplicación esté lista para s
 
 Esta sección se completará en una fase posterior del proyecto y cubrirá:
 
-*   **Configuración de la VM**: Preparar una VM en Google Cloud con todas las dependencias necesarias (Python, Node.js, Docker, Nginx, etc.).
-*   **Gestión de Claves SSH**: Crear y configurar claves SSH para permitir que GitHub Actions se conecte de forma segura a la VM para el despliegue.
-*   **Flujo de Trabajo de Despliegue Continuo (CD)**: Crear un nuevo flujo de trabajo de GitHub Actions (`deploy.yml`) que, tras el éxito de la CI, se conecte a la VM y despliegue la nueva versión de la aplicación.
+* **Configuración de la VM**: Preparar una VM en Google Cloud con todas las dependencias necesarias (Python, Node.js, Docker, Nginx, etc.).
+* **Gestión de Claves SSH**: Crear y configurar claves SSH para permitir que GitHub Actions se conecte de forma segura a la VM para el despliegue.
+* **Flujo de Trabajo de Despliegue Continuo (CD)**: Crear un nuevo flujo de trabajo de GitHub Actions (`deploy.yml`) que, tras el éxito de la CI, se conecte a la VM y despliegue la nueva versión de la aplicación.
 
 **Cloud** **(Para** **ﬂujos** **de** **trabajo** **avanzados)**
 
@@ -395,34 +403,34 @@ Esta sección adapta la guía al entorno actual de trabajo en Windsurf (Windows)
 
 Perfil del entorno actual (resumen)
 
-- Sistema operativo: Windows.
-- Editor: Windsurf IDE con agente Cascade.
-- MCP Servers disponibles: github-mcp-server, locofy, mcp-playwright, memory, postgresql, prisma-mcp-server, puppeteer, sequential-thinking.
-- Observación del repositorio actual (`c:/Users/alean/Desktop/Server-Automata/`): no se detectaron archivos típicos de automatización (por ejemplo: `.github/`, `Dockerfile`, `docker-compose*.yml`, `package.json`, `requirements.txt`, `pyproject.toml`, scripts `*.ps1`/`*.bat`). Si existen en otra ruta o repo, indícala para incorporarlos a esta guía.
+* Sistema operativo: Windows.
+* Editor: Windsurf IDE con agente Cascade.
+* MCP Servers disponibles: github-mcp-server, locofy, mcp-playwright, memory, postgresql, prisma-mcp-server, puppeteer, sequential-thinking.
+* Observación del repositorio actual (`c:/Users/alean/Desktop/Server-Automata/`): no se detectaron archivos típicos de automatización (por ejemplo: `.github/`, `Dockerfile`, `docker-compose*.yml`, `package.json`, `requirements.txt`, `pyproject.toml`, scripts `*.ps1`/`*.bat`). Si existen en otra ruta o repo, indícala para incorporarlos a esta guía.
 
 Acciones rápidas desde Windsurf (MCP)
 
-- GitHub (github-mcp-server): crear/actualizar issues, ramas y PRs; hacer reviews, comentar líneas, actualizar ramas de PR con `base`, reintentar/rerun de workflows, y hacer merge (según permisos). Ideal para GitOps: planificar → rama → commits → PR → revisión → merge → release.
-- QA E2E (mcp-playwright / puppeteer): navegar, llenar formularios, tomar capturas, generar o ejecutar tests, esperar y afirmar respuestas HTTP. Útil para smoke/E2E rápidos y evidencias (screenshots/PDFs).
-- Base de datos (prisma-mcp-server / postgresql):
-  - Prisma: `migrate status`, `migrate dev` (crear/aplicar migraciones), `Prisma Studio` (GUI), `migrate reset` (SOLO desarrollo; DESTRUCTIVO).
-  - PostgreSQL: consultas read-only para validaciones o diagnósticos.
-- Memoria y planificación (memory, sequential-thinking): documentar decisiones, plantillas, checklists y mantener planes iterativos de tareas.
-- UI/Componentes (locofy): sincronizar componentes y dependencias entre estructura de carpetas y código del IDE.
+* GitHub (github-mcp-server): crear/actualizar issues, ramas y PRs; hacer reviews, comentar líneas, actualizar ramas de PR con `base`, reintentar/rerun de workflows, y hacer merge (según permisos). Ideal para GitOps: planificar → rama → commits → PR → revisión → merge → release.
+* QA E2E (mcp-playwright / puppeteer): navegar, llenar formularios, tomar capturas, generar o ejecutar tests, esperar y afirmar respuestas HTTP. Útil para smoke/E2E rápidos y evidencias (screenshots/PDFs).
+* Base de datos (prisma-mcp-server / postgresql):
+  * Prisma: `migrate status`, `migrate dev` (crear/aplicar migraciones), `Prisma Studio` (GUI), `migrate reset` (SOLO desarrollo; DESTRUCTIVO).
+  * PostgreSQL: consultas read-only para validaciones o diagnósticos.
+* Memoria y planificación (memory, sequential-thinking): documentar decisiones, plantillas, checklists y mantener planes iterativos de tareas.
+* UI/Componentes (locofy): sincronizar componentes y dependencias entre estructura de carpetas y código del IDE.
 
 Buenas prácticas de calidad
 
-- Ejecuta linters y pruebas localmente antes de automatizar (regla: “siempre revisar problemas de código antes de probar”).
-- Añade logs claros en scripts y pipelines para diagnosticar rápido.
-- Aísla problemas con pruebas unitarias/funcionales mínimas.
+* Ejecuta linters y pruebas localmente antes de automatizar (regla: “siempre revisar problemas de código antes de probar”).
+* Añade logs claros en scripts y pipelines para diagnosticar rápido.
+* Aísla problemas con pruebas unitarias/funcionales mínimas.
 
 Plantillas de scripts (Windows, opcional)
 
-- `scripts/bootstrap.ps1`: instala dependencias (Node/Python), prepara entorno.
-- `scripts/lint.ps1`: ejecuta linters/formatters.
-- `scripts/test.ps1`: corre pruebas unitarias/e2e.
-- `scripts/release.ps1`: versionado, changelog, build y publicación.
-- Recomendación: usa rutas relativas y `Write-Host` con mensajes claros; devuelve códigos de salida adecuados (`exit 1` en fallos) para integrarse fácil con CI.
+* `scripts/bootstrap.ps1`: instala dependencias (Node/Python), prepara entorno.
+* `scripts/lint.ps1`: ejecuta linters/formatters.
+* `scripts/test.ps1`: corre pruebas unitarias/e2e.
+* `scripts/release.ps1`: versionado, changelog, build y publicación.
+* Recomendación: usa rutas relativas y `Write-Host` con mensajes claros; devuelve códigos de salida adecuados (`exit 1` en fallos) para integrarse fácil con CI.
 
 Blueprint de CI con GitHub Actions (opcional)
 
@@ -471,170 +479,170 @@ Información necesaria para personalizar la guía
 
 Siguientes pasos
 
- - Confirmar la información anterior para generar scripts y pipelines listos para tu stack.
- - Si procede, crear los directorios `scripts/` y `.github/workflows/` con las plantillas acordadas.
- - Integrar comandos MCP en tu rutina (GitHub reviews/PRs, tests E2E, migraciones) y documentarlos en esta guía.
+* Confirmar la información anterior para generar scripts y pipelines listos para tu stack.
+* Si procede, crear los directorios `scripts/` y `.github/workflows/` con las plantillas acordadas.
+* Integrar comandos MCP en tu rutina (GitHub reviews/PRs, tests E2E, migraciones) y documentarlos en esta guía.
 
- . GitHub CLI (gh): uso práctico en Windows
+. GitHub CLI (gh): uso práctico en Windows
+
+Este apartado resume comandos comunes con GitHub CLI para autenticación, repositorios, PRs, Actions y secretos.
+
+Autenticación (SSH) y verificación:
+
+```powershell
+gh --version
+gh auth login --hostname github.com --git-protocol ssh --web
+gh auth status
+```
+
+Repositorios:
+
+```powershell
+# Clonar por SSH (recomendado)
+gh repo clone owner/repo
+# Crear repo remoto desde el directorio actual y hacer push inicial
+gh repo create owner/repo --private --source . --push
+```
+
+Issues y Pull Requests:
+
+```powershell
+gh issue list
+gh issue create -t "Título" -b "Descripción"
+gh pr create -t "feat: ..." -b "Detalles" -B main -H tu-rama
+gh pr status
+gh pr view --web
+```
+
+GitHub Actions:
+
+```powershell
+gh workflow list
+gh run list
+gh workflow run ci.yml
+gh run watch --exit-status  # espera al resultado del último run
+```
+
+Secretos (repo) y autenticación para CI:
+
+```powershell
+# Repo actual
+gh secret set MY_SECRET --body "valor"
+# Otro repo
+gh secret set MY_SECRET --repo owner/repo --body "valor"
+```
+
+GHCR (login al registry de contenedores):
+
+```powershell
+$env:GH_TOKEN = (gh auth token)
+echo $env:GH_TOKEN | docker login ghcr.io -u theChosen16 --password-stdin
+```
  
- Este apartado resume comandos comunes con GitHub CLI para autenticación, repositorios, PRs, Actions y secretos.
+. LangSmith (smith.langchain.com): observabilidad y evaluación
+
+LangSmith provee trazado, evaluación y monitoreo de pipelines LLM/AI. Úsalo en local y CI para depurar, comparar y auditar runs.
+
+Prerrequisitos:
+
+- Cuenta en LangSmith vinculada a GitHub (listo).
+- API Key desde Smith: Settings → API Keys. No la compartas; guárdala como GitHub Secret.
+
+Variables de entorno mínimas (PowerShell):
+
+```powershell
+$env:LANGCHAIN_TRACING_V2="true"
+$env:LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+$env:LANGCHAIN_API_KEY="<TU_API_KEY>"    # En CI usa GitHub Secrets
+$env:LANGCHAIN_PROJECT="automata-local"  # opcional
+```
+
+Python (tracing básico):
+
+```powershell
+pip install langsmith
+```
+
+```python
+import os
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+# LANGCHAIN_API_KEY se toma del entorno
+
+from langsmith import traceable
+
+@traceable
+def ejemplo(nombre: str) -> str:
+    return f"Hola, {nombre}!"
+
+if __name__ == "__main__":
+    print(ejemplo("mundo"))
+```
+
+JavaScript/TypeScript:
+
+```powershell
+npm i -S langsmith
+# o: pnpm add langsmith
+```
+
+```ts
+// Activación por variables de entorno
+process.env.LANGCHAIN_TRACING_V2 = "true";
+process.env.LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com";
+// LANGCHAIN_API_KEY se lee desde el entorno/secretos
+```
+
+Crear secreto en GitHub con GH CLI:
+
+```powershell
+gh secret set LANGCHAIN_API_KEY --body "<TU_API_KEY>"
+```
+
+Integración en GitHub Actions (fragmentos):
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r backend/requirements.txt langsmith
+      - name: Run tests with LangSmith tracing
+        run: pytest -q
+        env:
+          LANGCHAIN_TRACING_V2: "true"
+          LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
+          LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+          LANGCHAIN_PROJECT: ci-${{ github.repository }}
+
+  web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --prefix web-app
+      - run: npm test --prefix web-app
+        env:
+          LANGCHAIN_TRACING_V2: "true"
+          LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
+          LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+          LANGCHAIN_PROJECT: ci-${{ github.repository }}
+```
  
- Autenticación (SSH) y verificación:
- 
- ```powershell
- gh --version
- gh auth login --hostname github.com --git-protocol ssh --web
- gh auth status
- ```
- 
- Repositorios:
- 
- ```powershell
- # Clonar por SSH (recomendado)
- gh repo clone owner/repo
- # Crear repo remoto desde el directorio actual y hacer push inicial
- gh repo create owner/repo --private --source . --push
- ```
- 
- Issues y Pull Requests:
- 
- ```powershell
- gh issue list
- gh issue create -t "Título" -b "Descripción"
- gh pr create -t "feat: ..." -b "Detalles" -B main -H tu-rama
- gh pr status
- gh pr view --web
- ```
- 
- GitHub Actions:
- 
- ```powershell
- gh workflow list
- gh run list
- gh workflow run ci.yml
- gh run watch --exit-status  # espera al resultado del último run
- ```
- 
- Secretos (repo) y autenticación para CI:
- 
- ```powershell
- # Repo actual
- gh secret set MY_SECRET --body "valor"
- # Otro repo
- gh secret set MY_SECRET --repo owner/repo --body "valor"
- ```
- 
- GHCR (login al registry de contenedores):
- 
- ```powershell
- $env:GH_TOKEN = (gh auth token)
- echo $env:GH_TOKEN | docker login ghcr.io -u theChosen16 --password-stdin
- ```
- 
- . LangSmith (smith.langchain.com): observabilidad y evaluación
- 
- LangSmith provee trazado, evaluación y monitoreo de pipelines LLM/AI. Úsalo en local y CI para depurar, comparar y auditar runs.
- 
- Prerrequisitos:
- 
- - Cuenta en LangSmith vinculada a GitHub (listo).
- - API Key desde Smith: Settings → API Keys. No la compartas; guárdala como GitHub Secret.
- 
- Variables de entorno mínimas (PowerShell):
- 
- ```powershell
- $env:LANGCHAIN_TRACING_V2="true"
- $env:LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
- $env:LANGCHAIN_API_KEY="<TU_API_KEY>"    # En CI usa GitHub Secrets
- $env:LANGCHAIN_PROJECT="automata-local"  # opcional
- ```
- 
- Python (tracing básico):
- 
- ```powershell
- pip install langsmith
- ```
- 
- ```python
- import os
- os.environ["LANGCHAIN_TRACING_V2"] = "true"
- os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
- # LANGCHAIN_API_KEY se toma del entorno
- 
- from langsmith import traceable
- 
- @traceable
- def ejemplo(nombre: str) -> str:
-     return f"Hola, {nombre}!"
- 
- if __name__ == "__main__":
-     print(ejemplo("mundo"))
- ```
- 
- JavaScript/TypeScript:
- 
- ```powershell
- npm i -S langsmith
- # o: pnpm add langsmith
- ```
- 
- ```ts
- // Activación por variables de entorno
- process.env.LANGCHAIN_TRACING_V2 = "true";
- process.env.LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com";
- // LANGCHAIN_API_KEY se lee desde el entorno/secretos
- ```
- 
- Crear secreto en GitHub con GH CLI:
- 
- ```powershell
- gh secret set LANGCHAIN_API_KEY --body "<TU_API_KEY>"
- ```
- 
- Integración en GitHub Actions (fragmentos):
- 
- ```yaml
- # .github/workflows/ci.yml
- jobs:
-   backend-tests:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v4
-       - uses: actions/setup-python@v5
-         with:
-           python-version: '3.11'
-       - run: pip install -r backend/requirements.txt langsmith
-       - name: Run tests with LangSmith tracing
-         run: pytest -q
-         env:
-           LANGCHAIN_TRACING_V2: "true"
-           LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
-           LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
-           LANGCHAIN_PROJECT: ci-${{ github.repository }}
- 
-   web-tests:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v4
-       - uses: actions/setup-node@v4
-         with:
-           node-version: '20'
-       - run: npm ci --prefix web-app
-       - run: npm test --prefix web-app
-         env:
-           LANGCHAIN_TRACING_V2: "true"
-           LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
-           LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
-           LANGCHAIN_PROJECT: ci-${{ github.repository }}
- ```
- 
- Revisa y compara runs en: https://smith.langchain.com/
+ Revisa y compara runs en: <https://smith.langchain.com/>
  
  ---
 
 ## 9. Conclusión
   
- La automatización del ﬂujo de trabajo de desarrollo, integrando Windsurf
+La automatización del ﬂujo de trabajo de desarrollo, integrando Windsurf
 IDE, una VM de Google Cloud y GitHub, representa un avance signiﬁcativo
 en la eﬁciencia y la productividad del desarrollo de software. Al seguir
 los pasos y las conﬁguraciones detalladas en esta guía, los
