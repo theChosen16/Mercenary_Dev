@@ -30,30 +30,32 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@prisma/client'],
+  output: 'export',
+  // GitHub Pages does not support Next.js image optimization.
   images: {
-    domains: ['localhost', 'cdn.mercenary.cl'],
-    formats: ['image/webp', 'image/avif'],
+    unoptimized: true,
   },
+  serverExternalPackages: ['@prisma/client'],
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/backend/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/:path*`,
-      },
-    ]
-  },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: securityHeaders,
-      },
-    ]
-  },
+  // The following options are not supported by 'output: export'.
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: '/api/backend/:path*',
+  //       destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/:path*`,
+  //     },
+  //   ]
+  // },
+  // async headers() {
+  //   return [
+  //     {
+  //       source: '/(.*)',
+  //       headers: securityHeaders,
+  //     },
+  //   ]
+  // },
 };
 
 export default nextConfig;

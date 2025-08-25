@@ -12,6 +12,7 @@ interface MainLayoutProps {
     level: number
     experience_points: number
     profile_picture?: string
+    updated_at?: string
   }
   isAuthenticated?: boolean
 }

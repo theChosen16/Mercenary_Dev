@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Trophy, Star, Users, Zap, Shield, Clock } from 'lucide-react'
+import { PricingSection } from '@/components/subscription/PricingSection'
 
 export default function Home() {
   return (
@@ -134,6 +135,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <PricingSection />
+
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
@@ -145,8 +149,8 @@ export default function Home() {
               Únete a la revolución del freelancing gamificado y lleva tu carrera al siguiente nivel.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="gold" asChild>
-                <Link href="/register?type=freelancer">Soy Freelancer</Link>
+              <Button size="lg" variant="gold" onClick={() => window.location.href='/register?type=freelancer'}>
+                Soy Freelancer
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="/register?type=client">Busco Talento</Link>

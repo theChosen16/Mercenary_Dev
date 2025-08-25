@@ -46,6 +46,8 @@ class Project(Base):
     client: Mapped[User] = relationship(foreign_keys=[client_id], back_populates="projects_created")
     freelancer: Mapped[Optional[User]] = relationship(foreign_keys=[freelancer_id], back_populates="projects_assigned")
 
+    proposals: Mapped[List["Proposal"]] = relationship(back_populates="project")
+
     # Esta es la relación que faltaba y causaba el error de mapeo.
     # Se vincula con la relación 'projects' en el modelo Skill.
     # skills: Mapped[List[Skill]] = relationship(

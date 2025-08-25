@@ -45,12 +45,12 @@ export const API_ENDPOINTS = {
 
 // App Configuration
 export const APP_CONFIG = {
-  NAME: 'Mercenary',
+  NAME: 'Mercenarius',
   DESCRIPTION: 'Plataforma de freelancers gamificada',
   VERSION: '1.0.0',
   AUTHOR: 'Mercenary Team',
-  CONTACT_EMAIL: 'contact@mercenary.cl',
-  SUPPORT_EMAIL: 'support@mercenary.cl',
+  CONTACT_EMAIL: 'contact@mercenarius.cl',
+  SUPPORT_EMAIL: 'support@mercenarius.cl',
 } as const
 
 // User Types

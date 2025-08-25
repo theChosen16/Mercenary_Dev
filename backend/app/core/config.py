@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     EMAILS_FROM_EMAIL: Optional[EmailStr] = None
     EMAILS_FROM_NAME: Optional[str] = None
 
+    # Configuración de Mercado Pago
+    MERCADO_PAGO_ACCESS_TOKEN: Optional[str] = None
+
     # Configuración de la primera cuenta de administrador
     FIRST_SUPERUSER_EMAIL: Optional[EmailStr] = None
     FIRST_SUPERUSER_PASSWORD: Optional[str] = None

@@ -110,11 +110,11 @@ class Contract(Base):
     #     foreign_keys=[mercenary_id],
     #     back_populates="contracts_as_mercenary"
     # )
-    # announcement: Mapped["Announcement"] = relationship("Announcement", back_populates="contracts")
-        # transactions: Mapped[List["Transaction"]] = relationship(
-    #     back_populates="contract",
-    #     cascade="all, delete-orphan"
-    # )
+    announcement: Mapped["Announcement"] = relationship("Announcement", back_populates="contracts")
+    transactions: Mapped[List["Transaction"]] = relationship(
+        back_populates="contract",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Contract(id={self.id}, title='{self.title}', status='{self.status}')>"

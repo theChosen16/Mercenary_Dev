@@ -3,11 +3,12 @@ Modelo de Usuario simplificado para resolver errores de mapeo.
 """
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
+from .proposal import Proposal
 
 from pydantic import EmailStr
 from sqlalchemy import Boolean, Column, DateTime, Enum as SAEnum, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, Session
+from sqlalchemy.orm import Mapped, relationship, Session
 
 from app.db.base_class import Base
 
@@ -28,6 +29,40 @@ class User(Base):
     role: Mapped[UserRole] = Column(SAEnum(UserRole), nullable=False)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    reviews_written: Mapped[List["Review"]] = relationship(
+        "Review",
+        foreign_keys="Review.reviewer_id",
+        back_populates="reviewer"
+    )
+    reviews_received: Mapped[List["Review"]] = relationship(
+        "Review",
+        foreign_keys="Review.reviewee_id",
+        back_populates="reviewee"
+    )
+    announcements: Mapped[List["Announcement"]] = relationship(
+        "Announcement",
+        back_populates="owner"
+    )
+    profile: Mapped["Profile"] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    projects_created: Mapped[List["Project"]] = relationship(
+        "Project",
+        foreign_keys="Project.client_id",
+        back_populates="client"
+    )
+    projects_assigned: Mapped[List["Project"]] = relationship(
+        "Project",
+        foreign_keys="Project.freelancer_id",
+        back_populates="freelancer"
+    )
+    proposals: Mapped[List["Proposal"]] = relationship(
+        "Proposal",
+        foreign_keys="Proposal.mercenary_id",
+        back_populates="mercenary"
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"

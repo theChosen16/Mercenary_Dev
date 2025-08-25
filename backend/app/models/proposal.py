@@ -11,8 +11,6 @@ from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship, Mapped
 
 from app.db.base_class import Base
-from app.models.project import Project
-from app.models.user import User
 
 class ProposalStatus(EnumType):
     pending = "pending"
@@ -35,11 +33,11 @@ class Proposal(Base):
     updated_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # Relaciones
-    project_id: Mapped[int] = Column(Integer, ForeignKey("project.id"), nullable=False)
-    project: Mapped[Project] = relationship(Project, back_populates="proposals")
+    project_id: Mapped[int] = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    project: Mapped["Project"] = relationship("Project", back_populates="proposals")
     
     mercenary_id: Mapped[int] = Column(Integer, ForeignKey("users.id"), nullable=False)
-    mercenary: Mapped[User] = relationship(User, back_populates="proposals")
+    mercenary: Mapped["User"] = relationship("User", back_populates="proposals")
     
     def __repr__(self):
         return f"<Proposal {self.id} for Project {self.project_id}>"
